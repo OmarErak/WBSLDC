@@ -24,3 +24,7 @@ choco install llvm uncrustify cppcheck
 
 pre-commit install
 ```
+
+**Install ARM Embedded Toolchain**
+
+Install version 9-2020-q2-update from: https://developer.arm.com/downloads/-/gnu-rm
