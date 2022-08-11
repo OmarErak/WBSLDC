@@ -1,0 +1,73 @@
+{
+    "env": {
+        "nrfSDK": "nrfSDK\\nRF5_SDK_17.1.0_ddde560",
+        "softdevice": "softdevice\\s340"
+    },
+    "configurations": [
+        {
+            "name": "ARMGCC",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${softdevice}/config",
+                "${nrfSDK}/config",
+                "${nrfSDK}/config/**",
+                "${nrfSDK}/components",
+                "${nrfSDK}/components/ant/ant_channel_config",
+                "${nrfSDK}/components/boards",
+                "${nrfSDK}/components/libraries/atomic",
+                "${nrfSDK}/components/libraries/atomic_fifo",
+                "${nrfSDK}/components/libraries/balloc",
+                "${nrfSDK}/components/libraries/bsp",
+                "${nrfSDK}/components/libraries/button",
+                "${nrfSDK}/components/libraries/delay",
+                "${nrfSDK}/components/libraries/experimental_section_vars",
+                "${nrfSDK}/components/libraries/hardfault",
+                "${nrfSDK}/components/libraries/hardfault/nrf52",
+                "${nrfSDK}/components/libraries/log",
+                "${nrfSDK}/components/libraries/log/src",
+                "${nrfSDK}/components/libraries/memobj",
+                "${nrfSDK}/components/libraries/mutex",
+                "${nrfSDK}/components/libraries/pwr_mgmt",
+                "${nrfSDK}/components/libraries/ringbuf",
+                "${nrfSDK}/components/libraries/scheduler",
+                "${nrfSDK}/components/libraries/sortlist",
+                "${nrfSDK}/components/libraries/strerror",
+                "${nrfSDK}/components/libraries/timer",
+                "${nrfSDK}/components/libraries/util",
+                "${nrfSDK}/components/softdevice/common",
+                "${nrfSDK}/components/softdevice/s340/headers",
+                "${nrfSDK}/components/softdevice/s340/headers/nrf52",
+                "${nrfSDK}/components/toolchain/cmsis/include",
+                "${nrfSDK}/external/fprintf",
+                "${nrfSDK}/external/segger_rtt",
+                "${nrfSDK}/integration/nrfx",
+                "${nrfSDK}/integration/nrfx/legacy",
+                "${nrfSDK}/modules/nrfx",
+                "${nrfSDK}/modules/nrfx/drivers/include",
+                "${nrfSDK}/modules/nrfx/hal",
+                "${nrfSDK}/modules/nrfx/mdk"
+            ],
+            "defines": [
+                "APP_TIMER_V2",
+                "APP_TIMER_V2_RTC1_ENABLED",
+                "BOARD_PCA10056",
+                "CONFIG_GPIO_AS_PINRESET",
+                "FLOAT_ABI_HARD",
+                "INITIALIZE_USER_SECTIONS",
+                "NO_VTOR_CONFIG",
+                "NRF52840_XXAA",
+                "NRF_SD_BLE_API_VERSION=6",
+                "S340",
+                "SOFTDEVICE_PRESENT",
+                "DEBUG",
+                "DEBUG_NRF"
+            ],
+            "compilerPath": "C:\\Program Files (x86)\\GNU Arm Embedded Toolchain\\9 2020-q2-update\\bin\\arm-none-eabi-gcc.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        }
+    ],
+    "version": 4
+}

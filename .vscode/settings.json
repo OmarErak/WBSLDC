@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "sdk_config.h": "c",
+        "ant_message_types_master.h": "c",
+        "nrf_delay.h": "c",
+        "app_util_platform.h": "c",
+        "nrf_drv_twi.h": "c",
+        "app_error.h": "c"
+    },
+    "cortex-debug.variableUseNaturalFormat": false
+}
