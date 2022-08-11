@@ -14,4 +14,4 @@ jobs:
       uses: ryanwinter/arm-none-eabi-gcc@master
       with:
         release: '9-2020-q2'
-    - run: make
+    - run: whereis arm-none-eabi-gcc
