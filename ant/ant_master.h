@@ -1,7 +1,7 @@
 /**
  * This software is subject to the ANT+ Shared Source License
  * www.thisisant.com/swlicenses
- * Copyright (c) Garmin Canada Inc. 2015
+ * Copyright (c) Garmin Canada Inc. 2014
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or
@@ -50,71 +50,28 @@
  * ABOVE LIMITATIONS MAY NOT APPLY TO YOU.
  *
  */
-#include <stdint.h>
+#ifndef ANT_MASTER_H__
+#define ANT_MASTER_H__
 
-#include "ant_master.h"
-#include "app_error.h"
-#include "app_timer.h"
-#include "boards.h"
 #include "bsp.h"
-#include "hardfault.h"
-#include "nrf.h"
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-#include "nrf_pwr_mgmt.h"
-#include "nrf_sdh.h"
-#include "nrf_sdh_ant.h"
 
-/**@brief Function for the Timer and BSP initialization.
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**@brief Function for configuring and starting ANT channel
+ *
  */
-static void utils_setup(void) {
-  ret_code_t err_code = app_timer_init();
-  APP_ERROR_CHECK(err_code);
+void ant_message_types_master_setup(void);
 
-  err_code = bsp_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS,
-                      ant_message_types_master_bsp_evt_handler);
-  APP_ERROR_CHECK(err_code);
-
-  err_code = nrf_pwr_mgmt_init();
-  APP_ERROR_CHECK(err_code);
-}
-
-/**@brief Function for ANT stack initialization.
+/**@brief Handles BSP events.
+ *
+ * @param[in] evt   BSP event.
  */
-static void softdevice_setup(void) {
-  ret_code_t err_code = nrf_sdh_enable_request();
-  APP_ERROR_CHECK(err_code);
+void ant_message_types_master_bsp_evt_handler(bsp_event_t evt);
 
-  ASSERT(nrf_sdh_is_enabled());
-
-  err_code = nrf_sdh_ant_enable();
-  APP_ERROR_CHECK(err_code);
+#ifdef __cplusplus
 }
+#endif
 
-/**
- *@brief Function for initializing logging.
- */
-static void log_init(void) {
-  ret_code_t err_code = NRF_LOG_INIT(NULL);
-  APP_ERROR_CHECK(err_code);
-
-  NRF_LOG_DEFAULT_BACKENDS_INIT();
-}
-
-/**@brief Function for application main entry. Does not return.
- */
-int main(void) {
-  log_init();
-  utils_setup();
-  softdevice_setup();
-  ant_message_types_master_setup();
-
-  NRF_LOG_INFO("ANT Message Types example started.");
-
-  // Enter main loop.
-  for (;;) {
-    NRF_LOG_FLUSH();
-    nrf_pwr_mgmt_run();
-  }
-}
+#endif  // ANT_TYPES_H__

@@ -85,7 +85,7 @@
   #include STRINGIFY(CUSTOM_BOARD_INC.h)
 #elif defined(BOARD_CUSTOM)
   #include "custom_board.h"
-#elif defined(BOARD_ARDUINO_NANO_33_ANT)
+#elif defined(BOARD_ARDUINO_NANO_33_SENSE)
   #include "arduino_nano_33_ble_sense.h"
 #else
 #error "Board is not defined"
