@@ -46,7 +46,6 @@
 #include <stdint.h>
 
 #include "app_error.h"
-#include "app_timer.h"
 #include "boards.h"
 #include "hardfault.h"
 #include "nrf.h"
@@ -58,10 +57,7 @@
 /**@brief Function for the Timer and BSP initialization.
  */
 static void utils_setup(void) {
-  ret_code_t err_code = app_timer_init();
-  APP_ERROR_CHECK(err_code);
-
-  err_code = nrf_pwr_mgmt_init();
+  ret_code_t err_code = nrf_pwr_mgmt_init();
   APP_ERROR_CHECK(err_code);
 }
 
