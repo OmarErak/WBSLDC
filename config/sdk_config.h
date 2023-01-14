@@ -41,6 +41,11 @@
 
 #ifndef SDK_CONFIG_H
 #define SDK_CONFIG_H
+
+#ifndef DEBUG
+#define DEBUG 1
+#endif
+
 // <<< Use Configuration Wizard in Context Menu >>>\n
 #ifdef USE_APP_CONFIG
 #include "app_config.h"
@@ -527,52 +532,41 @@
 
 // </e>
 
-// <e> NRFX_SPIM_ENABLED - nrfx_spim - SPIM peripheral driver
+// <e> NRFX_TWIM_ENABLED - nrfx_twim - TWIM peripheral driver
 //==========================================================
-#ifndef NRFX_SPIM_ENABLED
-#define NRFX_SPIM_ENABLED 1
+#ifndef NRFX_TWIM_ENABLED
+#define NRFX_TWIM_ENABLED 1
 #endif
-// <q> NRFX_SPIM0_ENABLED  - Enable SPIM0 instance
+// <q> NRFX_TWIM0_ENABLED  - Enable TWIM0 instance
 
-#ifndef NRFX_SPIM0_ENABLED
-#define NRFX_SPIM0_ENABLED 0
-#endif
-
-// <q> NRFX_SPIM1_ENABLED  - Enable SPIM1 instance
-
-#ifndef NRFX_SPIM1_ENABLED
-#define NRFX_SPIM1_ENABLED 0
+#ifndef NRFX_TWIM0_ENABLED
+#define NRFX_TWIM0_ENABLED 0
 #endif
 
-// <q> NRFX_SPIM2_ENABLED  - Enable SPIM2 instance
+// <q> NRFX_TWIM1_ENABLED  - Enable TWIM1 instance
 
-#ifndef NRFX_SPIM2_ENABLED
-#define NRFX_SPIM2_ENABLED 0
+#ifndef NRFX_TWIM1_ENABLED
+#define NRFX_TWIM1_ENABLED 0
 #endif
 
-// <q> NRFX_SPIM3_ENABLED  - Enable SPIM3 instance
+// <o> NRFX_TWIM_DEFAULT_CONFIG_FREQUENCY  - Frequency
 
-#ifndef NRFX_SPIM3_ENABLED
-#define NRFX_SPIM3_ENABLED 0
+// <26738688=> 100k
+// <67108864=> 250k
+// <104857600=> 400k
+
+#ifndef NRFX_TWIM_DEFAULT_CONFIG_FREQUENCY
+#define NRFX_TWIM_DEFAULT_CONFIG_FREQUENCY 26738688
 #endif
 
-// <q> NRFX_SPIM_EXTENDED_ENABLED  - Enable extended SPIM features
+// <q> NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT  - Enables bus holding after
+// uninit
 
-#ifndef NRFX_SPIM_EXTENDED_ENABLED
-#define NRFX_SPIM_EXTENDED_ENABLED 0
+#ifndef NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT
+#define NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT 0
 #endif
 
-// <o> NRFX_SPIM_MISO_PULL_CFG  - MISO pin pull configuration.
-
-// <0=> NRF_GPIO_PIN_NOPULL
-// <1=> NRF_GPIO_PIN_PULLDOWN
-// <3=> NRF_GPIO_PIN_PULLUP
-
-#ifndef NRFX_SPIM_MISO_PULL_CFG
-#define NRFX_SPIM_MISO_PULL_CFG 1
-#endif
-
-// <o> NRFX_SPIM_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -583,16 +577,16 @@
 // <6=> 6
 // <7=> 7
 
-#ifndef NRFX_SPIM_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_SPIM_DEFAULT_CONFIG_IRQ_PRIORITY 6
+#ifndef NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY
+#define NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
-// <e> NRFX_SPIM_CONFIG_LOG_ENABLED - Enables logging in the module.
+// <e> NRFX_TWIM_CONFIG_LOG_ENABLED - Enables logging in the module.
 //==========================================================
-#ifndef NRFX_SPIM_CONFIG_LOG_ENABLED
-#define NRFX_SPIM_CONFIG_LOG_ENABLED 0
+#ifndef NRFX_TWIM_CONFIG_LOG_ENABLED
+#define NRFX_TWIM_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_SPIM_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_TWIM_CONFIG_LOG_LEVEL  - Default Severity level
 
 // <0=> Off
 // <1=> Error
@@ -600,11 +594,11 @@
 // <3=> Info
 // <4=> Debug
 
-#ifndef NRFX_SPIM_CONFIG_LOG_LEVEL
-#define NRFX_SPIM_CONFIG_LOG_LEVEL 3
+#ifndef NRFX_TWIM_CONFIG_LOG_LEVEL
+#define NRFX_TWIM_CONFIG_LOG_LEVEL 3
 #endif
 
-// <o> NRFX_SPIM_CONFIG_INFO_COLOR  - ANSI escape code prefix.
+// <o> NRFX_TWIM_CONFIG_INFO_COLOR  - ANSI escape code prefix.
 
 // <0=> Default
 // <1=> Black
@@ -616,11 +610,11 @@
 // <7=> Cyan
 // <8=> White
 
-#ifndef NRFX_SPIM_CONFIG_INFO_COLOR
-#define NRFX_SPIM_CONFIG_INFO_COLOR 0
+#ifndef NRFX_TWIM_CONFIG_INFO_COLOR
+#define NRFX_TWIM_CONFIG_INFO_COLOR 0
 #endif
 
-// <o> NRFX_SPIM_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
+// <o> NRFX_TWIM_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
 
 // <0=> Default
 // <1=> Black
@@ -632,48 +626,49 @@
 // <7=> Cyan
 // <8=> White
 
-#ifndef NRFX_SPIM_CONFIG_DEBUG_COLOR
-#define NRFX_SPIM_CONFIG_DEBUG_COLOR 0
+#ifndef NRFX_TWIM_CONFIG_DEBUG_COLOR
+#define NRFX_TWIM_CONFIG_DEBUG_COLOR 0
 #endif
 
 // </e>
 
 // </e>
 
-// <e> NRFX_SPI_ENABLED - nrfx_spi - SPI peripheral driver
+// <e> NRFX_TWI_ENABLED - nrfx_twi - TWI peripheral driver
 //==========================================================
-#ifndef NRFX_SPI_ENABLED
-#define NRFX_SPI_ENABLED 1
+#ifndef NRFX_TWI_ENABLED
+#define NRFX_TWI_ENABLED 1
 #endif
-// <q> NRFX_SPI0_ENABLED  - Enable SPI0 instance
+// <q> NRFX_TWI0_ENABLED  - Enable TWI0 instance
 
-#ifndef NRFX_SPI0_ENABLED
-#define NRFX_SPI0_ENABLED 0
-#endif
-
-// <q> NRFX_SPI1_ENABLED  - Enable SPI1 instance
-
-#ifndef NRFX_SPI1_ENABLED
-#define NRFX_SPI1_ENABLED 0
+#ifndef NRFX_TWI0_ENABLED
+#define NRFX_TWI0_ENABLED 0
 #endif
 
-// <q> NRFX_SPI2_ENABLED  - Enable SPI2 instance
+// <q> NRFX_TWI1_ENABLED  - Enable TWI1 instance
 
-#ifndef NRFX_SPI2_ENABLED
-#define NRFX_SPI2_ENABLED 0
+#ifndef NRFX_TWI1_ENABLED
+#define NRFX_TWI1_ENABLED 0
 #endif
 
-// <o> NRFX_SPI_MISO_PULL_CFG  - MISO pin pull configuration.
+// <o> NRFX_TWI_DEFAULT_CONFIG_FREQUENCY  - Frequency
 
-// <0=> NRF_GPIO_PIN_NOPULL
-// <1=> NRF_GPIO_PIN_PULLDOWN
-// <3=> NRF_GPIO_PIN_PULLUP
+// <26738688=> 100k
+// <67108864=> 250k
+// <104857600=> 400k
 
-#ifndef NRFX_SPI_MISO_PULL_CFG
-#define NRFX_SPI_MISO_PULL_CFG 1
+#ifndef NRFX_TWI_DEFAULT_CONFIG_FREQUENCY
+#define NRFX_TWI_DEFAULT_CONFIG_FREQUENCY 26738688
 #endif
 
-// <o> NRFX_SPI_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <q> NRFX_TWI_DEFAULT_CONFIG_HOLD_BUS_UNINIT  - Enables bus holding after
+// uninit
+
+#ifndef NRFX_TWI_DEFAULT_CONFIG_HOLD_BUS_UNINIT
+#define NRFX_TWI_DEFAULT_CONFIG_HOLD_BUS_UNINIT 0
+#endif
+
+// <o> NRFX_TWI_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -684,16 +679,16 @@
 // <6=> 6
 // <7=> 7
 
-#ifndef NRFX_SPI_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_SPI_DEFAULT_CONFIG_IRQ_PRIORITY 6
+#ifndef NRFX_TWI_DEFAULT_CONFIG_IRQ_PRIORITY
+#define NRFX_TWI_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
-// <e> NRFX_SPI_CONFIG_LOG_ENABLED - Enables logging in the module.
+// <e> NRFX_TWI_CONFIG_LOG_ENABLED - Enables logging in the module.
 //==========================================================
-#ifndef NRFX_SPI_CONFIG_LOG_ENABLED
-#define NRFX_SPI_CONFIG_LOG_ENABLED 0
+#ifndef NRFX_TWI_CONFIG_LOG_ENABLED
+#define NRFX_TWI_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_SPI_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_TWI_CONFIG_LOG_LEVEL  - Default Severity level
 
 // <0=> Off
 // <1=> Error
@@ -701,11 +696,11 @@
 // <3=> Info
 // <4=> Debug
 
-#ifndef NRFX_SPI_CONFIG_LOG_LEVEL
-#define NRFX_SPI_CONFIG_LOG_LEVEL 3
+#ifndef NRFX_TWI_CONFIG_LOG_LEVEL
+#define NRFX_TWI_CONFIG_LOG_LEVEL 3
 #endif
 
-// <o> NRFX_SPI_CONFIG_INFO_COLOR  - ANSI escape code prefix.
+// <o> NRFX_TWI_CONFIG_INFO_COLOR  - ANSI escape code prefix.
 
 // <0=> Default
 // <1=> Black
@@ -717,11 +712,11 @@
 // <7=> Cyan
 // <8=> White
 
-#ifndef NRFX_SPI_CONFIG_INFO_COLOR
-#define NRFX_SPI_CONFIG_INFO_COLOR 0
+#ifndef NRFX_TWI_CONFIG_INFO_COLOR
+#define NRFX_TWI_CONFIG_INFO_COLOR 0
 #endif
 
-// <o> NRFX_SPI_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
+// <o> NRFX_TWI_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
 
 // <0=> Default
 // <1=> Black
@@ -733,8 +728,8 @@
 // <7=> Cyan
 // <8=> White
 
-#ifndef NRFX_SPI_CONFIG_DEBUG_COLOR
-#define NRFX_SPI_CONFIG_DEBUG_COLOR 0
+#ifndef NRFX_TWI_CONFIG_DEBUG_COLOR
+#define NRFX_TWI_CONFIG_DEBUG_COLOR 0
 #endif
 
 // </e>
@@ -988,12 +983,35 @@
 
 // </e>
 
-// <e> SPI_ENABLED - nrf_drv_spi - SPI/SPIM peripheral driver - legacy layer
+// <e> TWI_ENABLED - nrf_drv_twi - TWI/TWIM peripheral driver - legacy layer
 //==========================================================
-#ifndef SPI_ENABLED
-#define SPI_ENABLED 1
+#ifndef TWI_ENABLED
+#define TWI_ENABLED 1
 #endif
-// <o> SPI_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> TWI_DEFAULT_CONFIG_FREQUENCY  - Frequency
+
+// <26738688=> 100k
+// <67108864=> 250k
+// <104857600=> 400k
+
+#ifndef TWI_DEFAULT_CONFIG_FREQUENCY
+#define TWI_DEFAULT_CONFIG_FREQUENCY 26738688
+#endif
+
+// <q> TWI_DEFAULT_CONFIG_CLR_BUS_INIT  - Enables bus clearing procedure during
+// init
+
+#ifndef TWI_DEFAULT_CONFIG_CLR_BUS_INIT
+#define TWI_DEFAULT_CONFIG_CLR_BUS_INIT 0
+#endif
+
+// <q> TWI_DEFAULT_CONFIG_HOLD_BUS_UNINIT  - Enables bus holding after uninit
+
+#ifndef TWI_DEFAULT_CONFIG_HOLD_BUS_UNINIT
+#define TWI_DEFAULT_CONFIG_HOLD_BUS_UNINIT 0
+#endif
+
+// <o> TWI_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
 
 // <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
 // <0=> 0 (highest)
@@ -1005,55 +1023,32 @@
 // <6=> 6
 // <7=> 7
 
-#ifndef SPI_DEFAULT_CONFIG_IRQ_PRIORITY
-#define SPI_DEFAULT_CONFIG_IRQ_PRIORITY 6
+#ifndef TWI_DEFAULT_CONFIG_IRQ_PRIORITY
+#define TWI_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
-// <o> NRF_SPI_DRV_MISO_PULLUP_CFG  - MISO PIN pull-up configuration.
-
-// <0=> NRF_GPIO_PIN_NOPULL
-// <1=> NRF_GPIO_PIN_PULLDOWN
-// <3=> NRF_GPIO_PIN_PULLUP
-
-#ifndef NRF_SPI_DRV_MISO_PULLUP_CFG
-#define NRF_SPI_DRV_MISO_PULLUP_CFG 1
-#endif
-
-// <e> SPI0_ENABLED - Enable SPI0 instance
+// <e> TWI0_ENABLED - Enable TWI0 instance
 //==========================================================
-#ifndef SPI0_ENABLED
-#define SPI0_ENABLED 1
+#ifndef TWI0_ENABLED
+#define TWI0_ENABLED 1
 #endif
-// <q> SPI0_USE_EASY_DMA  - Use EasyDMA
+// <q> TWI0_USE_EASY_DMA  - Use EasyDMA (if present)
 
-#ifndef SPI0_USE_EASY_DMA
-#define SPI0_USE_EASY_DMA 1
+#ifndef TWI0_USE_EASY_DMA
+#define TWI0_USE_EASY_DMA 1
 #endif
 
 // </e>
 
-// <e> SPI1_ENABLED - Enable SPI1 instance
+// <e> TWI1_ENABLED - Enable TWI1 instance
 //==========================================================
-#ifndef SPI1_ENABLED
-#define SPI1_ENABLED 0
+#ifndef TWI1_ENABLED
+#define TWI1_ENABLED 0
 #endif
-// <q> SPI1_USE_EASY_DMA  - Use EasyDMA
+// <q> TWI1_USE_EASY_DMA  - Use EasyDMA (if present)
 
-#ifndef SPI1_USE_EASY_DMA
-#define SPI1_USE_EASY_DMA 1
-#endif
-
-// </e>
-
-// <e> SPI2_ENABLED - Enable SPI2 instance
-//==========================================================
-#ifndef SPI2_ENABLED
-#define SPI2_ENABLED 0
-#endif
-// <q> SPI2_USE_EASY_DMA  - Use EasyDMA
-
-#ifndef SPI2_USE_EASY_DMA
-#define SPI2_USE_EASY_DMA 1
+#ifndef TWI1_USE_EASY_DMA
+#define TWI1_USE_EASY_DMA 0
 #endif
 
 // </e>

@@ -20,7 +20,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 
 Open command prompt as administrator and run the following:
 ```bash
-choco install llvm uncrustify cppcheck
+choco install llvm uncrustify
 
 pre-commit install
 ```

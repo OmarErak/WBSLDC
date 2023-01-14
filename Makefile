@@ -11,6 +11,7 @@ $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
 # Source files common to all targets
 SRC_FILES += \
   $(PROJ_DIR)/ant/ant_master.c \
+  $(PROJ_DIR)/drivers/lsm9ds1/lsm9ds1_reg.c \
   $(PROJ_DIR)/main.c \
   $(SDK_ROOT)/components/ant/ant_channel_config/ant_channel_config.c \
   $(SDK_ROOT)/components/boards/boards.c \
@@ -49,8 +50,11 @@ SRC_FILES += \
   $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_printf.c \
   $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_Syscalls_GCC.c \
   $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT.c \
+  $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_twi.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_uart.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_gpiote.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twi.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twim.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uart.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uarte.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/prs/nrfx_prs.c \
@@ -62,6 +66,7 @@ SRC_FILES += \
 INC_FOLDERS += \
   $(PROJ_DIR)/ant \
   $(PROJ_DIR)/config \
+  $(PROJ_DIR)/drivers/lsm9ds1 \
   $(SDK_ROOT)/components \
   $(SDK_ROOT)/components/ant/ant_channel_config \
   $(SDK_ROOT)/components/boards \
@@ -192,7 +197,7 @@ flash: default
 erase:
 	nrfjprog -f nrf52 --eraseall
 
-SDK_CONFIG_FILE := ../config/sdk_config.h
+SDK_CONFIG_FILE := $(PROJ_DIR)/config/sdk_config.h
 CMSIS_CONFIG_TOOL := $(SDK_ROOT)/external_tools/cmsisconfig/CMSIS_Configuration_Wizard.jar
 sdk_config:
 	java -jar $(CMSIS_CONFIG_TOOL) $(SDK_CONFIG_FILE)

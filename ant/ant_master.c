@@ -86,8 +86,6 @@ static uint8_t
     m_tx_buffer[BROADCAST_DATA_BUFFER_SIZE];  // < Primary data
                                               // (Broadcast/Acknowledged)
                                               // transmit buffer.
-static uint8_t m_counter =
-    1u;  // < Counter to increment the ANT broadcast data payload. */
 static uint8_t
     m_burst_data[BURST_BLOCK_SIZE]; /**< Burst data transmit buffer. */
 
@@ -129,7 +127,6 @@ void ant_message_types_master_setup(void) {
   // The last byte is chosen to get the data more visible in the end of an
   // printout on the recieving end.
   memset(m_tx_buffer, 0, BROADCAST_DATA_BUFFER_SIZE);
-  m_tx_buffer[BROADCAST_DATA_BUFFER_SIZE - 1] = m_counter;
 
   // Configure the initial payload of the broadcast data
   err_code = sd_ant_broadcast_message_tx(
@@ -159,6 +156,19 @@ void ant_message_types_master_bsp_evt_handler(bsp_event_t evt) {
   }
 }
 
+void send_broadcast(const uint8_t* data, uint8_t size) {
+  for (uint8_t i = 0; i < BROADCAST_DATA_BUFFER_SIZE - 1; i++) {
+    if (i < size)
+      m_tx_buffer[i] = data[i];
+    else
+      m_tx_buffer[i] = 0;
+  }
+  uint32_t err_code = sd_ant_broadcast_message_tx(
+      ANT_CHANNEL_NUM, BROADCAST_DATA_BUFFER_SIZE, m_tx_buffer);
+  APP_ERROR_CHECK(err_code);
+  state_message_types = BROADCAST;
+}
+
 /**@brief Function for handling a ANT stack event.
  *
  * @param[in] p_ant_evt  ANT stack event.
@@ -176,7 +186,6 @@ static void ant_evt_handler(ant_evt_t* p_ant_evt, void* p_context) {
     case EVENT_TRANSFER_TX_COMPLETED:  // Intentional fall through
     case EVENT_TRANSFER_TX_FAILED:
       bsp_board_leds_off();
-      m_tx_buffer[BROADCAST_DATA_BUFFER_SIZE - 1] = m_counter;
 
       if (state_message_types == BROADCAST) {
         // Send as broadcast
@@ -198,8 +207,6 @@ static void ant_evt_handler(ant_evt_t* p_ant_evt, void* p_context) {
         // same content.
         if (p_ant_evt->event != EVENT_TRANSFER_TX_FAILED) {
           for (uint32_t i = 0; i < BURST_BLOCK_SIZE; i++) {
-            m_burst_data[i] = m_counter;
-            m_counter++;
           }
         }
 
@@ -216,7 +223,7 @@ static void ant_evt_handler(ant_evt_t* p_ant_evt, void* p_context) {
       bsp_board_led_on(led_output);
       nrf_delay_ms(20);
       bsp_board_led_off(led_output);
-      m_counter++;
+
       break;
 
     case TRANSFER_IN_PROGRESS:            // Intentional fall through

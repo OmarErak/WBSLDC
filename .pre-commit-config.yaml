@@ -13,5 +13,3 @@ repos:
     hooks:
     -   id: clang-format
         args: [--style=Google, -i]
-    -   id: cppcheck
-    -   id: cpplint
