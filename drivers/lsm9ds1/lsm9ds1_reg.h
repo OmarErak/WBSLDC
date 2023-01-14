@@ -150,15 +150,8 @@ typedef struct {
 #define LSM9DS1_IMU_I2C_ADD_L 0xD5U
 #define LSM9DS1_IMU_I2C_ADD_H 0xD7U
 
-/** I2C Device Address 8 bit format  if SA0=0 -> 0x3D if SA0=1 -> 0x39 **/
-#define LSM9DS1_MAG_I2C_ADD_L 0x3DU
-#define LSM9DS1_MAG_I2C_ADD_H 0x39U
-
 /** Device Identification (Who am I) **/
 #define LSM9DS1_IMU_ID 0x68U
-
-/** Device Identification (Who am I) **/
-#define LSM9DS1_MAG_ID 0x3DU
 
 /**
  * @}
@@ -706,83 +699,16 @@ int32_t lsm9ds1_xl_full_scale_set(lsm9ds1_ctx_t *ctx, lsm9ds1_xl_fs_t val);
 int32_t lsm9ds1_xl_full_scale_get(lsm9ds1_ctx_t *ctx, lsm9ds1_xl_fs_t *val);
 
 int32_t lsm9ds1_block_data_update_set(lsm9ds1_ctx_t *ctx_imu, uint8_t val);
-int32_t lsm9ds1_block_data_update_get(lsm9ds1_ctx_t *ctx_mag,
-                                      lsm9ds1_ctx_t *ctx_imu, uint8_t *val);
-
-int32_t lsm9ds1_mag_offset_set(lsm9ds1_ctx_t *ctx, uint8_t *buff);
-int32_t lsm9ds1_mag_offset_get(lsm9ds1_ctx_t *ctx, uint8_t *buff);
-
-typedef enum {
-  LSM9DS1_MAG_POWER_DOWN = 0xC0,
-  LSM9DS1_MAG_LP_0Hz625 = 0x00,
-  LSM9DS1_MAG_LP_1Hz25 = 0x01,
-  LSM9DS1_MAG_LP_2Hz5 = 0x02,
-  LSM9DS1_MAG_LP_5Hz = 0x03,
-  LSM9DS1_MAG_LP_10Hz = 0x04,
-  LSM9DS1_MAG_LP_20Hz = 0x05,
-  LSM9DS1_MAG_LP_40Hz = 0x06,
-  LSM9DS1_MAG_LP_80Hz = 0x07,
-  LSM9DS1_MAG_MP_0Hz625 = 0x10,
-  LSM9DS1_MAG_MP_1Hz25 = 0x11,
-  LSM9DS1_MAG_MP_2Hz5 = 0x12,
-  LSM9DS1_MAG_MP_5Hz = 0x13,
-  LSM9DS1_MAG_MP_10Hz = 0x14,
-  LSM9DS1_MAG_MP_20Hz = 0x15,
-  LSM9DS1_MAG_MP_40Hz = 0x16,
-  LSM9DS1_MAG_MP_80Hz = 0x17,
-  LSM9DS1_MAG_HP_0Hz625 = 0x20,
-  LSM9DS1_MAG_HP_1Hz25 = 0x21,
-  LSM9DS1_MAG_HP_2Hz5 = 0x22,
-  LSM9DS1_MAG_HP_5Hz = 0x23,
-  LSM9DS1_MAG_HP_10Hz = 0x24,
-  LSM9DS1_MAG_HP_20Hz = 0x25,
-  LSM9DS1_MAG_HP_40Hz = 0x26,
-  LSM9DS1_MAG_HP_80Hz = 0x27,
-  LSM9DS1_MAG_UHP_0Hz625 = 0x30,
-  LSM9DS1_MAG_UHP_1Hz25 = 0x31,
-  LSM9DS1_MAG_UHP_2Hz5 = 0x32,
-  LSM9DS1_MAG_UHP_5Hz = 0x33,
-  LSM9DS1_MAG_UHP_10Hz = 0x34,
-  LSM9DS1_MAG_UHP_20Hz = 0x35,
-  LSM9DS1_MAG_UHP_40Hz = 0x36,
-  LSM9DS1_MAG_UHP_80Hz = 0x37,
-  LSM9DS1_MAG_UHP_155Hz = 0x38,
-  LSM9DS1_MAG_HP_300Hz = 0x28,
-  LSM9DS1_MAG_MP_560Hz = 0x18,
-  LSM9DS1_MAG_LP_1000Hz = 0x08,
-  LSM9DS1_MAG_ONE_SHOT = 0x70,
-} lsm9ds1_mag_data_rate_t;
-int32_t lsm9ds1_mag_data_rate_set(lsm9ds1_ctx_t *ctx,
-                                  lsm9ds1_mag_data_rate_t val);
-int32_t lsm9ds1_mag_data_rate_get(lsm9ds1_ctx_t *ctx,
-                                  lsm9ds1_mag_data_rate_t *val);
-
-typedef enum {
-  LSM9DS1_4Ga = 0,
-  LSM9DS1_8Ga = 1,
-  LSM9DS1_12Ga = 2,
-  LSM9DS1_16Ga = 3,
-} lsm9ds1_mag_fs_t;
-int32_t lsm9ds1_mag_full_scale_set(lsm9ds1_ctx_t *ctx, lsm9ds1_mag_fs_t val);
-int32_t lsm9ds1_mag_full_scale_get(lsm9ds1_ctx_t *ctx, lsm9ds1_mag_fs_t *val);
-
-int32_t lsm9ds1_mag_flag_data_ready_get(lsm9ds1_ctx_t *ctx, uint8_t *val);
-
-int32_t lsm9ds1_temperature_raw_get(lsm9ds1_ctx_t *ctx, uint8_t *buff);
+int32_t lsm9ds1_block_data_update_get(lsm9ds1_ctx_t *ctx_imu, uint8_t *val);
 
 int32_t lsm9ds1_angular_rate_raw_get(lsm9ds1_ctx_t *ctx, uint8_t *buff);
 
 int32_t lsm9ds1_acceleration_raw_get(lsm9ds1_ctx_t *ctx, uint8_t *buff);
 
-int32_t lsm9ds1_magnetic_raw_get(lsm9ds1_ctx_t *ctx, uint8_t *buff);
-
-int32_t lsm9ds1_magnetic_overflow_get(lsm9ds1_ctx_t *ctx, uint8_t *val);
-
 typedef uint8_t lsm9ds1_id_t;
 int32_t lsm9ds1_dev_id_get(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_id_t *buff);
 
 typedef struct {
-  lsm9ds1_status_reg_m_t status_mag;
   lsm9ds1_status_reg_t status_imu;
 } lsm9ds1_status_t;
 int32_t lsm9ds1_dev_status_get(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_status_t *val);
@@ -794,15 +720,11 @@ typedef enum {
   LSM9DS1_LSB_LOW_ADDRESS = 0,
   LSM9DS1_MSB_LOW_ADDRESS = 1,
 } lsm9ds1_ble_t;
-int32_t lsm9ds1_dev_data_format_set(lsm9ds1_ctx_t *ctx_mag,
-                                    lsm9ds1_ctx_t *ctx_imu, lsm9ds1_ble_t val);
-int32_t lsm9ds1_dev_data_format_get(lsm9ds1_ctx_t *ctx_mag,
-                                    lsm9ds1_ctx_t *ctx_imu, lsm9ds1_ble_t *val);
+int32_t lsm9ds1_dev_data_format_set(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_ble_t val);
+int32_t lsm9ds1_dev_data_format_get(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_ble_t *val);
 
-int32_t lsm9ds1_dev_boot_set(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
-                             uint8_t val);
-int32_t lsm9ds1_dev_boot_get(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
-                             uint8_t *val);
+int32_t lsm9ds1_dev_boot_set(lsm9ds1_ctx_t *ctx_imu, uint8_t val);
+int32_t lsm9ds1_dev_boot_get(lsm9ds1_ctx_t *ctx_imu, uint8_t *val);
 
 int32_t lsm9ds1_gy_filter_reference_set(lsm9ds1_ctx_t *ctx, uint8_t *buff);
 int32_t lsm9ds1_gy_filter_reference_get(lsm9ds1_ctx_t *ctx, uint8_t *buff);
@@ -919,20 +841,16 @@ typedef enum {
   LSM9DS1_SPI_4_WIRE = 0,
   LSM9DS1_SPI_3_WIRE = 1,
 } lsm9ds1_sim_t;
-int32_t lsm9ds1_spi_mode_set(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
-                             lsm9ds1_sim_t val);
-int32_t lsm9ds1_spi_mode_get(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
-                             lsm9ds1_sim_t *val);
+int32_t lsm9ds1_spi_mode_set(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_sim_t val);
+int32_t lsm9ds1_spi_mode_get(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_sim_t *val);
 
 typedef enum {
   LSM9DS1_I2C_ENABLE = 0,
   LSM9DS1_I2C_DISABLE = 1,
 } lsm9ds1_i2c_dis_t;
-int32_t lsm9ds1_i2c_interface_set(lsm9ds1_ctx_t *ctx_mag,
-                                  lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_i2c_interface_set(lsm9ds1_ctx_t *ctx_imu,
                                   lsm9ds1_i2c_dis_t val);
-int32_t lsm9ds1_i2c_interface_get(lsm9ds1_ctx_t *ctx_mag,
-                                  lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_i2c_interface_get(lsm9ds1_ctx_t *ctx_imu,
                                   lsm9ds1_i2c_dis_t *val);
 
 typedef enum {
@@ -974,10 +892,8 @@ typedef enum {
   LSM9DS1_INT_PULSED = 0,
   LSM9DS1_INT_LATCHED = 1,
 } lsm9ds1_lir_t;
-int32_t lsm9ds1_pin_notification_set(lsm9ds1_ctx_t *ctx_mag,
-                                     lsm9ds1_ctx_t *ctx_imu, lsm9ds1_lir_t val);
-int32_t lsm9ds1_pin_notification_get(lsm9ds1_ctx_t *ctx_mag,
-                                     lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_pin_notification_set(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_lir_t val);
+int32_t lsm9ds1_pin_notification_get(lsm9ds1_ctx_t *ctx_imu,
                                      lsm9ds1_lir_t *val);
 
 typedef enum {
@@ -998,9 +914,9 @@ typedef enum {
   LSM9DS1_ACTIVE_LOW = 0,
   LSM9DS1_ACTIVE_HIGH = 1,
 } lsm9ds1_polarity_t;
-int32_t lsm9ds1_pin_polarity_set(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_pin_polarity_set(lsm9ds1_ctx_t *ctx_imu,
                                  lsm9ds1_polarity_t val);
-int32_t lsm9ds1_pin_polarity_get(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_pin_polarity_get(lsm9ds1_ctx_t *ctx_imu,
                                  lsm9ds1_polarity_t *val);
 
 typedef struct {
@@ -1077,30 +993,6 @@ int32_t lsm9ds1_gy_trshld_z_get(lsm9ds1_ctx_t *ctx, uint16_t *val);
 
 int32_t lsm9ds1_gy_trshld_min_sample_set(lsm9ds1_ctx_t *ctx, uint8_t val);
 int32_t lsm9ds1_gy_trshld_min_sample_get(lsm9ds1_ctx_t *ctx, uint8_t *val);
-
-typedef struct {
-  uint8_t zien : 1;
-  uint8_t yien : 1;
-  uint8_t xien : 1;
-} lsm9ds1_mag_trshld_axis_t;
-int32_t lsm9ds1_mag_trshld_axis_set(lsm9ds1_ctx_t *ctx,
-                                    lsm9ds1_mag_trshld_axis_t val);
-int32_t lsm9ds1_mag_trshld_axis_get(lsm9ds1_ctx_t *ctx,
-                                    lsm9ds1_mag_trshld_axis_t *val);
-typedef struct {
-  uint8_t _int : 1;
-  uint8_t nth_z : 1;
-  uint8_t nth_y : 1;
-  uint8_t nth_x : 1;
-  uint8_t pth_z : 1;
-  uint8_t pth_y : 1;
-  uint8_t pth_x : 1;
-} lsm9ds1_mag_trshld_src_t;
-int32_t lsm9ds1_mag_trshld_src_get(lsm9ds1_ctx_t *ctx,
-                                   lsm9ds1_mag_trshld_src_t *val);
-
-int32_t lsm9ds1_mag_trshld_set(lsm9ds1_ctx_t *ctx, uint8_t *val);
-int32_t lsm9ds1_mag_trshld_get(lsm9ds1_ctx_t *ctx, uint8_t *val);
 
 int32_t lsm9ds1_act_threshold_set(lsm9ds1_ctx_t *ctx, uint8_t val);
 int32_t lsm9ds1_act_threshold_get(lsm9ds1_ctx_t *ctx, uint8_t *val);
@@ -1179,8 +1071,6 @@ int32_t lsm9ds1_xl_self_test_get(lsm9ds1_ctx_t *ctx, uint8_t *val);
 int32_t lsm9ds1_gy_self_test_set(lsm9ds1_ctx_t *ctx, uint8_t val);
 int32_t lsm9ds1_gy_self_test_get(lsm9ds1_ctx_t *ctx, uint8_t *val);
 
-int32_t lsm9ds1_mag_self_test_set(lsm9ds1_ctx_t *ctx, uint8_t val);
-int32_t lsm9ds1_mag_self_test_get(lsm9ds1_ctx_t *ctx, uint8_t *val);
 /**
  *@}
  *

@@ -659,7 +659,6 @@ int32_t lsm9ds1_xl_full_scale_get(lsm9ds1_ctx_t *ctx, lsm9ds1_xl_fs_t *val) {
 /**
  * @brief  Blockdataupdate.[set]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Change the values of bdu in reg CTRL_REG8.
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
@@ -681,344 +680,19 @@ int32_t lsm9ds1_block_data_update_set(lsm9ds1_ctx_t *ctx_imu, uint8_t val) {
 /**
  * @brief  Blockdataupdate.[get]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Get the values of bdu in reg CTRL_REG8.(ptr)
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_block_data_update_get(lsm9ds1_ctx_t *ctx_mag,
-                                      lsm9ds1_ctx_t *ctx_imu, uint8_t *val) {
+int32_t lsm9ds1_block_data_update_get(lsm9ds1_ctx_t *ctx_imu, uint8_t *val) {
   lsm9ds1_ctrl_reg8_t ctrl_reg8;
-  lsm9ds1_ctrl_reg5_m_t ctrl_reg5_m;
   int32_t ret;
 
   ret = lsm9ds1_read_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
   if (ret == 0) {
-    ret = lsm9ds1_read_reg(ctx_mag, LSM9DS1_CTRL_REG5_M,
-                           (uint8_t *)&ctrl_reg5_m, 1);
-    *val = (uint8_t)(ctrl_reg5_m.bdu & ctrl_reg8.bdu);
+    *val = (uint8_t)ctrl_reg8.bdu;
   }
-  return ret;
-}
-
-/**
- * @brief  This register is a 16-bit register and represents the X offset
- *         used to compensate environmental effects (data is expressed as
- *         two’s complement).[set]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  buff   Buffer that stores data to be write.(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_offset_set(lsm9ds1_ctx_t *ctx, uint8_t *buff) {
-  int32_t ret;
-  ret = lsm9ds1_write_reg(ctx, LSM9DS1_OFFSET_X_REG_L_M, buff, 6);
-  return ret;
-}
-
-/**
- * @brief  This register is a 16-bit register and represents the X offset
- *         used to compensate environmental effects (data is expressed as
- *         two’s complement).[get]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  buff   Buffer that stores data read.(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_offset_get(lsm9ds1_ctx_t *ctx, uint8_t *buff) {
-  int32_t ret;
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_OFFSET_X_REG_L_M, buff, 6);
-  return ret;
-}
-
-/**
- * @brief  Magnetometer data rate selection.[set]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val    Change the values of "fast_odr" in reg LSM9DS1.
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_data_rate_set(lsm9ds1_ctx_t *ctx,
-                                  lsm9ds1_mag_data_rate_t val) {
-  lsm9ds1_ctrl_reg1_m_t ctrl_reg1_m;
-  lsm9ds1_ctrl_reg3_m_t ctrl_reg3_m;
-  lsm9ds1_ctrl_reg4_m_t ctrl_reg4_m;
-  int32_t ret;
-
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_CTRL_REG1_M, (uint8_t *)&ctrl_reg1_m, 1);
-  if (ret == 0) {
-    ctrl_reg1_m.fast_odr = (((uint8_t)val & 0x08U) >> 3);
-    ctrl_reg1_m._do = ((uint8_t)val & 0x07U);
-    ctrl_reg1_m.om = (((uint8_t)val & 0x30U) >> 4);
-    ctrl_reg1_m.temp_comp = PROPERTY_ENABLE;
-    ret =
-        lsm9ds1_write_reg(ctx, LSM9DS1_CTRL_REG1_M, (uint8_t *)&ctrl_reg1_m, 1);
-  }
-  if (ret == 0) {
-    ret =
-        lsm9ds1_read_reg(ctx, LSM9DS1_CTRL_REG3_M, (uint8_t *)&ctrl_reg3_m, 1);
-  }
-  if (ret == 0) {
-    ctrl_reg3_m.md = (((uint8_t)val & 0xC0U) >> 6);
-    ret =
-        lsm9ds1_write_reg(ctx, LSM9DS1_CTRL_REG3_M, (uint8_t *)&ctrl_reg3_m, 1);
-  }
-  if (ret == 0) {
-    ret =
-        lsm9ds1_read_reg(ctx, LSM9DS1_CTRL_REG4_M, (uint8_t *)&ctrl_reg4_m, 1);
-  }
-  if (ret == 0) {
-    ctrl_reg4_m.omz = (((uint8_t)val & 0x30U) >> 4);
-    ;
-    ret =
-        lsm9ds1_write_reg(ctx, LSM9DS1_CTRL_REG4_M, (uint8_t *)&ctrl_reg4_m, 1);
-  }
-  return ret;
-}
-
-/**
- * @brief  Magnetometer data rate selection.[get]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val    Get the values of fast_odr in reg CTRL_REG1_M.(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_data_rate_get(lsm9ds1_ctx_t *ctx,
-                                  lsm9ds1_mag_data_rate_t *val) {
-  lsm9ds1_ctrl_reg1_m_t ctrl_reg1_m;
-  lsm9ds1_ctrl_reg3_m_t ctrl_reg3_m;
-  int32_t ret;
-
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_CTRL_REG1_M, (uint8_t *)&ctrl_reg1_m, 1);
-  if (ret == 0) {
-    ret =
-        lsm9ds1_read_reg(ctx, LSM9DS1_CTRL_REG3_M, (uint8_t *)&ctrl_reg3_m, 1);
-  }
-  switch ((ctrl_reg3_m.md << 6) | (ctrl_reg1_m.om << 4) |
-          (ctrl_reg1_m.fast_odr << 3) | ctrl_reg1_m._do) {
-    case LSM9DS1_MAG_POWER_DOWN:
-      *val = LSM9DS1_MAG_POWER_DOWN;
-      break;
-    case LSM9DS1_MAG_LP_0Hz625:
-      *val = LSM9DS1_MAG_LP_0Hz625;
-      break;
-    case LSM9DS1_MAG_LP_1Hz25:
-      *val = LSM9DS1_MAG_LP_1Hz25;
-      break;
-    case LSM9DS1_MAG_LP_2Hz5:
-      *val = LSM9DS1_MAG_LP_2Hz5;
-      break;
-    case LSM9DS1_MAG_LP_5Hz:
-      *val = LSM9DS1_MAG_LP_5Hz;
-      break;
-    case LSM9DS1_MAG_LP_10Hz:
-      *val = LSM9DS1_MAG_LP_10Hz;
-      break;
-    case LSM9DS1_MAG_LP_20Hz:
-      *val = LSM9DS1_MAG_LP_20Hz;
-      break;
-    case LSM9DS1_MAG_LP_40Hz:
-      *val = LSM9DS1_MAG_LP_40Hz;
-      break;
-    case LSM9DS1_MAG_LP_80Hz:
-      *val = LSM9DS1_MAG_LP_80Hz;
-      break;
-    case LSM9DS1_MAG_MP_0Hz625:
-      *val = LSM9DS1_MAG_MP_0Hz625;
-      break;
-    case LSM9DS1_MAG_MP_1Hz25:
-      *val = LSM9DS1_MAG_MP_1Hz25;
-      break;
-    case LSM9DS1_MAG_MP_2Hz5:
-      *val = LSM9DS1_MAG_MP_2Hz5;
-      break;
-    case LSM9DS1_MAG_MP_5Hz:
-      *val = LSM9DS1_MAG_MP_5Hz;
-      break;
-    case LSM9DS1_MAG_MP_10Hz:
-      *val = LSM9DS1_MAG_MP_10Hz;
-      break;
-    case LSM9DS1_MAG_MP_20Hz:
-      *val = LSM9DS1_MAG_MP_20Hz;
-      break;
-    case LSM9DS1_MAG_MP_40Hz:
-      *val = LSM9DS1_MAG_MP_40Hz;
-      break;
-    case LSM9DS1_MAG_MP_80Hz:
-      *val = LSM9DS1_MAG_MP_80Hz;
-      break;
-    case LSM9DS1_MAG_HP_0Hz625:
-      *val = LSM9DS1_MAG_HP_0Hz625;
-      break;
-    case LSM9DS1_MAG_HP_1Hz25:
-      *val = LSM9DS1_MAG_HP_1Hz25;
-      break;
-    case LSM9DS1_MAG_HP_2Hz5:
-      *val = LSM9DS1_MAG_HP_2Hz5;
-      break;
-    case LSM9DS1_MAG_HP_5Hz:
-      *val = LSM9DS1_MAG_HP_5Hz;
-      break;
-    case LSM9DS1_MAG_HP_10Hz:
-      *val = LSM9DS1_MAG_HP_10Hz;
-      break;
-    case LSM9DS1_MAG_HP_20Hz:
-      *val = LSM9DS1_MAG_HP_20Hz;
-      break;
-    case LSM9DS1_MAG_HP_40Hz:
-      *val = LSM9DS1_MAG_HP_40Hz;
-      break;
-    case LSM9DS1_MAG_HP_80Hz:
-      *val = LSM9DS1_MAG_HP_80Hz;
-      break;
-    case LSM9DS1_MAG_UHP_0Hz625:
-      *val = LSM9DS1_MAG_UHP_0Hz625;
-      break;
-    case LSM9DS1_MAG_UHP_1Hz25:
-      *val = LSM9DS1_MAG_UHP_1Hz25;
-      break;
-    case LSM9DS1_MAG_UHP_2Hz5:
-      *val = LSM9DS1_MAG_UHP_2Hz5;
-      break;
-    case LSM9DS1_MAG_UHP_5Hz:
-      *val = LSM9DS1_MAG_UHP_5Hz;
-      break;
-    case LSM9DS1_MAG_UHP_10Hz:
-      *val = LSM9DS1_MAG_UHP_10Hz;
-      break;
-    case LSM9DS1_MAG_UHP_20Hz:
-      *val = LSM9DS1_MAG_UHP_20Hz;
-      break;
-    case LSM9DS1_MAG_UHP_40Hz:
-      *val = LSM9DS1_MAG_UHP_40Hz;
-      break;
-    case LSM9DS1_MAG_UHP_80Hz:
-      *val = LSM9DS1_MAG_UHP_80Hz;
-      break;
-    case LSM9DS1_MAG_UHP_155Hz:
-      *val = LSM9DS1_MAG_UHP_155Hz;
-      break;
-    case LSM9DS1_MAG_HP_300Hz:
-      *val = LSM9DS1_MAG_HP_300Hz;
-      break;
-    case LSM9DS1_MAG_MP_560Hz:
-      *val = LSM9DS1_MAG_MP_560Hz;
-      break;
-    case LSM9DS1_MAG_LP_1000Hz:
-      *val = LSM9DS1_MAG_LP_1000Hz;
-      break;
-    case LSM9DS1_MAG_ONE_SHOT:
-      *val = LSM9DS1_MAG_ONE_SHOT;
-      break;
-    default:
-      *val = LSM9DS1_MAG_POWER_DOWN;
-      break;
-  }
-  return ret;
-}
-
-/**
- * @brief  Magnetometer full Scale Selection.[set]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val    Change the values of "fs" in reg LSM9DS1.
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_full_scale_set(lsm9ds1_ctx_t *ctx, lsm9ds1_mag_fs_t val) {
-  lsm9ds1_ctrl_reg2_m_t ctrl_reg2_m;
-  int32_t ret;
-
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_CTRL_REG2_M, (uint8_t *)&ctrl_reg2_m, 1);
-  if (ret == 0) {
-    ctrl_reg2_m.fs = (uint8_t)val;
-    ret =
-        lsm9ds1_write_reg(ctx, LSM9DS1_CTRL_REG2_M, (uint8_t *)&ctrl_reg2_m, 1);
-  }
-  return ret;
-}
-
-/**
- * @brief  Magnetometer full scale selection.[get]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val    Get the values of fs in reg CTRL_REG2_M.(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_full_scale_get(lsm9ds1_ctx_t *ctx, lsm9ds1_mag_fs_t *val) {
-  lsm9ds1_ctrl_reg2_m_t ctrl_reg2_m;
-  int32_t ret;
-
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_CTRL_REG2_M, (uint8_t *)&ctrl_reg2_m, 1);
-  switch (ctrl_reg2_m.fs) {
-    case LSM9DS1_4Ga:
-      *val = LSM9DS1_4Ga;
-      break;
-    case LSM9DS1_8Ga:
-      *val = LSM9DS1_8Ga;
-      break;
-    case LSM9DS1_12Ga:
-      *val = LSM9DS1_12Ga;
-      break;
-    case LSM9DS1_16Ga:
-      *val = LSM9DS1_16Ga;
-      break;
-    default:
-      *val = LSM9DS1_4Ga;
-      break;
-  }
-  return ret;
-}
-
-/**
- * @brief  New data available from magnetometer.[get]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val    Iet the values of "zyxda" in reg STATUS_REG_M.(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_flag_data_ready_get(lsm9ds1_ctx_t *ctx, uint8_t *val) {
-  lsm9ds1_status_reg_m_t status_reg_m;
-  int32_t ret;
-
-  ret =
-      lsm9ds1_read_reg(ctx, LSM9DS1_STATUS_REG_M, (uint8_t *)&status_reg_m, 1);
-  *val = status_reg_m.zyxda;
-
-  return ret;
-}
-
-/**
- * @}
- *
- */
-
-/**
- * @defgroup     LSM9DS1_Dataoutput
- * @brief        This section groups all the data output functions.
- * @{
- *
- */
-
-/**
- * @brief  Temperature data output register (r). L and H registers
- *         together express a 16-bit word in two’s complement.[get]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  buff   Buffer that stores the data read.(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_temperature_raw_get(lsm9ds1_ctx_t *ctx, uint8_t *buff) {
-  int32_t ret;
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_OUT_TEMP_L, buff, 2);
   return ret;
 }
 
@@ -1053,54 +727,8 @@ int32_t lsm9ds1_acceleration_raw_get(lsm9ds1_ctx_t *ctx, uint8_t *buff) {
 }
 
 /**
- * @brief  Magnetic sensor. The value is expressed as a 16-bit word in
- *         two’s complement.[get]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  buff   Buffer that stores the data read.(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_magnetic_raw_get(lsm9ds1_ctx_t *ctx, uint8_t *buff) {
-  int32_t ret;
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_OUT_X_L_M, buff, 6);
-  return ret;
-}
-
-/**
- * @brief  Internal measurement range overflow on magnetic value.[get]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val    Iet the values of "mroi" in reg INT_SRC_M.(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_magnetic_overflow_get(lsm9ds1_ctx_t *ctx, uint8_t *val) {
-  lsm9ds1_int_src_m_t int_src_m;
-  int32_t ret;
-
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_INT_SRC_M, (uint8_t *)&int_src_m, 1);
-  *val = int_src_m.mroi;
-
-  return ret;
-}
-
-/**
- * @}
- *
- */
-
-/**
- * @defgroup    LSM9DS1_Common
- * @brief       This section groups common usefull functions.
- * @{
- *
- */
-
-/**
  * @brief  DeviceWhoamI.[get]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  buff      Buffer that stores the data read.(ptr)
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
@@ -1115,7 +743,6 @@ int32_t lsm9ds1_dev_id_get(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_id_t *buff) {
 /**
  * @brief  Device status register.[get]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Device status registers.(ptr)
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
@@ -1133,7 +760,6 @@ int32_t lsm9ds1_dev_status_get(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_status_t *val) {
 /**
  * @brief  Software reset. Restore the default values in user registers.[set]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val    Change the values of sw_reset in reg CTRL_REG8.
  * @retval        Interface status (MANDATORY: return 0 -> no Error).
@@ -1156,7 +782,6 @@ int32_t lsm9ds1_dev_reset_set(lsm9ds1_ctx_t *ctx_imu, uint8_t val) {
 /**
  * @brief  Software reset. Restore the default values in user registers.[get]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Get the values of sw_reset in reg CTRL_REG8.(ptr)
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
@@ -1176,16 +801,13 @@ int32_t lsm9ds1_dev_reset_get(lsm9ds1_ctx_t *ctx_imu, uint8_t *val) {
 /**
  * @brief  Big/Little Endian data selection.[set]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Change the values of "ble" in reg LSM9DS1.
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_dev_data_format_set(lsm9ds1_ctx_t *ctx_mag,
-                                    lsm9ds1_ctx_t *ctx_imu, lsm9ds1_ble_t val) {
+int32_t lsm9ds1_dev_data_format_set(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_ble_t val) {
   lsm9ds1_ctrl_reg8_t ctrl_reg8;
-  lsm9ds1_ctrl_reg4_m_t ctrl_reg4_m;
   int32_t ret;
 
   ret = lsm9ds1_read_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
@@ -1194,40 +816,24 @@ int32_t lsm9ds1_dev_data_format_set(lsm9ds1_ctx_t *ctx_mag,
     ret =
         lsm9ds1_write_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
   }
-  if (ret == 0) {
-    ret = lsm9ds1_read_reg(ctx_mag, LSM9DS1_CTRL_REG4_M,
-                           (uint8_t *)&ctrl_reg4_m, 1);
-  }
-  if (ret == 0) {
-    ctrl_reg4_m.ble = (uint8_t)val;
-    ret = lsm9ds1_write_reg(ctx_mag, LSM9DS1_CTRL_REG4_M,
-                            (uint8_t *)&ctrl_reg4_m, 1);
-  }
   return ret;
 }
 
 /**
  * @brief  Big/Little Endian data selection.[get]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Get the values of ble in reg CTRL_REG8.(ptr)
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_dev_data_format_get(lsm9ds1_ctx_t *ctx_mag,
-                                    lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_dev_data_format_get(lsm9ds1_ctx_t *ctx_imu,
                                     lsm9ds1_ble_t *val) {
   lsm9ds1_ctrl_reg8_t ctrl_reg8;
-  lsm9ds1_ctrl_reg4_m_t ctrl_reg4_m;
   int32_t ret;
 
   ret = lsm9ds1_read_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
-  if (ret == 0) {
-    ret = lsm9ds1_read_reg(ctx_mag, LSM9DS1_CTRL_REG4_M,
-                           (uint8_t *)&ctrl_reg4_m, 1);
-  }
-  switch (ctrl_reg8.ble & ctrl_reg4_m.ble) {
+  switch (ctrl_reg8.ble) {
     case LSM9DS1_LSB_LOW_ADDRESS:
       *val = LSM9DS1_LSB_LOW_ADDRESS;
       break;
@@ -1244,16 +850,13 @@ int32_t lsm9ds1_dev_data_format_get(lsm9ds1_ctx_t *ctx_mag,
 /**
  * @brief  Reboot memory content. Reload the calibration parameters.[set]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Change the values of boot in reg CTRL_REG8.
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_dev_boot_set(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
-                             uint8_t val) {
+int32_t lsm9ds1_dev_boot_set(lsm9ds1_ctx_t *ctx_imu, uint8_t val) {
   lsm9ds1_ctrl_reg8_t ctrl_reg8;
-  lsm9ds1_ctrl_reg2_m_t ctrl_reg2_m;
   int32_t ret;
 
   ret = lsm9ds1_read_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
@@ -1262,54 +865,27 @@ int32_t lsm9ds1_dev_boot_set(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
     ret =
         lsm9ds1_write_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
   }
-  if (ret == 0) {
-    ret = lsm9ds1_read_reg(ctx_mag, LSM9DS1_CTRL_REG2_M,
-                           (uint8_t *)&ctrl_reg2_m, 1);
-  }
-  if (ret == 0) {
-    ctrl_reg2_m.reboot = (uint8_t)val;
-    ret = lsm9ds1_write_reg(ctx_mag, LSM9DS1_CTRL_REG2_M,
-                            (uint8_t *)&ctrl_reg2_m, 1);
-  }
   return ret;
 }
 
 /**
  * @brief  Reboot memory content. Reload the calibration parameters.[get]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Get the values of boot in reg CTRL_REG8.(ptr)
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_dev_boot_get(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
-                             uint8_t *val) {
-  lsm9ds1_ctrl_reg2_m_t ctrl_reg2_m;
+int32_t lsm9ds1_dev_boot_get(lsm9ds1_ctx_t *ctx_imu, uint8_t *val) {
   lsm9ds1_ctrl_reg8_t ctrl_reg8;
   int32_t ret;
 
   ret = lsm9ds1_read_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
   if (ret == 0) {
-    ret = lsm9ds1_read_reg(ctx_mag, LSM9DS1_CTRL_REG2_M,
-                           (uint8_t *)&ctrl_reg2_m, 1);
-    *val = (uint8_t)ctrl_reg2_m.reboot & ctrl_reg8.boot;
+    *val = (uint8_t)ctrl_reg8.boot;
   }
   return ret;
 }
-
-/**
- * @}
- *
- */
-
-/**
-  * @defgroup    LSM9DS1_Filters
-  * @brief       This section group all the functions concerning the
-                 filters configuration
-  * @{
-  *
-  */
 
 /**
  * @brief  Reference value for gyroscope’s digital high-pass filter.[set]
@@ -1943,19 +1519,6 @@ int32_t lsm9ds1_filter_settling_mask_get(lsm9ds1_ctx_t *ctx, uint8_t *val) {
 }
 
 /**
- * @}
- *
- */
-
-/**
- * @defgroup     LSM9DS1_Serial_interface
- * @brief        This section groups all the functions concerning main
- *               serial interface management (not auxiliary)
- * @{
- *
- */
-
-/**
  * @brief  Register address automatically incremented during a multiple
  *         byte access with a serial interface.[set]
  *
@@ -1997,15 +1560,12 @@ int32_t lsm9ds1_auto_increment_get(lsm9ds1_ctx_t *ctx, uint8_t *val) {
 /**
  * @brief  SPI Serial Interface Mode selection.[set]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Change the values of "sim" in reg LSM9DS1.
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_spi_mode_set(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
-                             lsm9ds1_sim_t val) {
-  lsm9ds1_ctrl_reg3_m_t ctrl_reg3_m;
+int32_t lsm9ds1_spi_mode_set(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_sim_t val) {
   lsm9ds1_ctrl_reg8_t ctrl_reg8;
   int32_t ret;
 
@@ -2015,39 +1575,23 @@ int32_t lsm9ds1_spi_mode_set(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
     ret =
         lsm9ds1_write_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
   }
-  if (ret == 0) {
-    ret = lsm9ds1_read_reg(ctx_mag, LSM9DS1_CTRL_REG3_M,
-                           (uint8_t *)&ctrl_reg3_m, 1);
-  }
-  if (ret == 0) {
-    ctrl_reg3_m.sim = (uint8_t)val;
-    ret = lsm9ds1_write_reg(ctx_mag, LSM9DS1_CTRL_REG3_M,
-                            (uint8_t *)&ctrl_reg3_m, 1);
-  }
   return ret;
 }
 
 /**
  * @brief  SPI Serial Interface Mode selection.[get]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Get the values of sim in reg CTRL_REG8.(ptr)
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_spi_mode_get(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
-                             lsm9ds1_sim_t *val) {
-  lsm9ds1_ctrl_reg3_m_t ctrl_reg3_m;
+int32_t lsm9ds1_spi_mode_get(lsm9ds1_ctx_t *ctx_imu, lsm9ds1_sim_t *val) {
   lsm9ds1_ctrl_reg8_t ctrl_reg8;
   int32_t ret;
 
   ret = lsm9ds1_read_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
-  if (ret == 0) {
-    ret = lsm9ds1_read_reg(ctx_mag, LSM9DS1_CTRL_REG3_M,
-                           (uint8_t *)&ctrl_reg3_m, 1);
-  }
-  switch (ctrl_reg8.sim & ctrl_reg3_m.sim) {
+  switch (ctrl_reg8.sim) {
     case LSM9DS1_SPI_4_WIRE:
       *val = LSM9DS1_SPI_4_WIRE;
       break;
@@ -2064,16 +1608,13 @@ int32_t lsm9ds1_spi_mode_get(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
 /**
  * @brief  Enable / Disable I2C interface.[set]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Change the values of "i2c_disable" in reg LSM9DS1.
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_i2c_interface_set(lsm9ds1_ctx_t *ctx_mag,
-                                  lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_i2c_interface_set(lsm9ds1_ctx_t *ctx_imu,
                                   lsm9ds1_i2c_dis_t val) {
-  lsm9ds1_ctrl_reg3_m_t ctrl_reg3_m;
   lsm9ds1_ctrl_reg9_t ctrl_reg9;
   int32_t ret;
 
@@ -2083,40 +1624,25 @@ int32_t lsm9ds1_i2c_interface_set(lsm9ds1_ctx_t *ctx_mag,
     ret =
         lsm9ds1_write_reg(ctx_imu, LSM9DS1_CTRL_REG9, (uint8_t *)&ctrl_reg9, 1);
   }
-  if (ret == 0) {
-    ret = lsm9ds1_read_reg(ctx_mag, LSM9DS1_CTRL_REG3_M,
-                           (uint8_t *)&ctrl_reg3_m, 1);
-  }
-  if (ret == 0) {
-    ctrl_reg3_m.i2c_disable = (uint8_t)val;
-    ret = lsm9ds1_write_reg(ctx_mag, LSM9DS1_CTRL_REG3_M,
-                            (uint8_t *)&ctrl_reg3_m, 1);
-  }
   return ret;
 }
 
 /**
  * @brief  Enable / Disable I2C interface.[get]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Get the values of i2c_disable in reg CTRL_REG9.(ptr)
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_i2c_interface_get(lsm9ds1_ctx_t *ctx_mag,
-                                  lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_i2c_interface_get(lsm9ds1_ctx_t *ctx_imu,
                                   lsm9ds1_i2c_dis_t *val) {
-  lsm9ds1_ctrl_reg3_m_t ctrl_reg3_m;
   lsm9ds1_ctrl_reg9_t ctrl_reg9;
   int32_t ret;
 
   ret = lsm9ds1_read_reg(ctx_imu, LSM9DS1_CTRL_REG9, (uint8_t *)&ctrl_reg9, 1);
-  if (ret == 0) {
-    ret = lsm9ds1_read_reg(ctx_mag, LSM9DS1_CTRL_REG3_M,
-                           (uint8_t *)&ctrl_reg3_m, 1);
-  }
-  switch (ctrl_reg9.i2c_disable & ctrl_reg3_m.i2c_disable) {
+
+  switch (ctrl_reg9.i2c_disable) {
     case LSM9DS1_I2C_ENABLE:
       *val = LSM9DS1_I2C_ENABLE;
       break;
@@ -2129,19 +1655,6 @@ int32_t lsm9ds1_i2c_interface_get(lsm9ds1_ctx_t *ctx_mag,
   }
   return ret;
 }
-
-/**
- * @}
- *
- */
-
-/**
- * @defgroup     LSM9DS1_Interrupt_pins
- * @brief        This section groups all the functions that manage
- *               interrupt pins
- * @{
- *
- */
 
 /**
  * @brief  AND/OR combination of accelerometer’s interrupt events.[set]
@@ -2319,17 +1832,14 @@ int32_t lsm9ds1_pin_int2_route_get(lsm9ds1_ctx_t *ctx,
 /**
  * @brief  Latched/pulsed interrupt.[set]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Change the values of "lir_xl1" in reg LSM9DS1.
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_pin_notification_set(lsm9ds1_ctx_t *ctx_mag,
-                                     lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_pin_notification_set(lsm9ds1_ctx_t *ctx_imu,
                                      lsm9ds1_lir_t val) {
   lsm9ds1_int_gen_cfg_g_t int_gen_cfg_g;
-  lsm9ds1_int_cfg_m_t int_cfg_m;
   lsm9ds1_ctrl_reg4_t ctrl_reg4;
   int32_t ret;
 
@@ -2348,15 +1858,6 @@ int32_t lsm9ds1_pin_notification_set(lsm9ds1_ctx_t *ctx_mag,
     ret = lsm9ds1_write_reg(ctx_imu, LSM9DS1_INT_GEN_CFG_G,
                             (uint8_t *)&int_gen_cfg_g, 1);
   }
-  if (ret == 0) {
-    ret =
-        lsm9ds1_read_reg(ctx_mag, LSM9DS1_INT_CFG_M, (uint8_t *)&int_cfg_m, 1);
-  }
-  if (ret == 0) {
-    int_cfg_m.iel = (uint8_t)val;
-    ret =
-        lsm9ds1_write_reg(ctx_mag, LSM9DS1_INT_CFG_M, (uint8_t *)&int_cfg_m, 1);
-  }
 
   return ret;
 }
@@ -2364,16 +1865,13 @@ int32_t lsm9ds1_pin_notification_set(lsm9ds1_ctx_t *ctx_mag,
 /**
  * @brief  Configure the interrupt notification mode.[get]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Get the values of iel in reg INT_CFG_M.(ptr)
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_pin_notification_get(lsm9ds1_ctx_t *ctx_mag,
-                                     lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_pin_notification_get(lsm9ds1_ctx_t *ctx_imu,
                                      lsm9ds1_lir_t *val) {
-  lsm9ds1_int_cfg_m_t int_cfg_m;
   lsm9ds1_int_gen_cfg_g_t int_gen_cfg_g;
   lsm9ds1_ctrl_reg4_t ctrl_reg4;
   int32_t ret;
@@ -2383,11 +1881,7 @@ int32_t lsm9ds1_pin_notification_get(lsm9ds1_ctx_t *ctx_mag,
     ret = lsm9ds1_read_reg(ctx_imu, LSM9DS1_INT_GEN_CFG_G,
                            (uint8_t *)&int_gen_cfg_g, 1);
   }
-  if (ret == 0) {
-    ret =
-        lsm9ds1_read_reg(ctx_mag, LSM9DS1_INT_CFG_M, (uint8_t *)&int_cfg_m, 1);
-  }
-  switch (int_cfg_m.iel & int_gen_cfg_g.lir_g & ctrl_reg4.lir_xl1) {
+  switch (int_gen_cfg_g.lir_g & ctrl_reg4.lir_xl1) {
     case LSM9DS1_INT_LATCHED:
       *val = LSM9DS1_INT_LATCHED;
       break;
@@ -2491,28 +1985,17 @@ int32_t lsm9ds1_pin_int_m_route_get(lsm9ds1_ctx_t *ctx,
 /**
  * @brief  Configure the interrupt pin polarity.[set]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Change the values of "iea" in reg LSM9DS1.
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_pin_polarity_set(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_pin_polarity_set(lsm9ds1_ctx_t *ctx_imu,
                                  lsm9ds1_polarity_t val) {
-  lsm9ds1_int_cfg_m_t int_cfg_m;
   lsm9ds1_ctrl_reg8_t ctrl_reg8;
   int32_t ret;
 
-  ret = lsm9ds1_read_reg(ctx_mag, LSM9DS1_INT_CFG_M, (uint8_t *)&int_cfg_m, 1);
-  if (ret == 0) {
-    int_cfg_m.iea = (uint8_t)val;
-    ret =
-        lsm9ds1_write_reg(ctx_mag, LSM9DS1_INT_CFG_M, (uint8_t *)&int_cfg_m, 1);
-  }
-  if (ret == 0) {
-    ret =
-        lsm9ds1_read_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
-  }
+  ret = lsm9ds1_read_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
   if (ret == 0) {
     ctrl_reg8.h_lactive = (uint8_t)(~val);
     ret =
@@ -2525,24 +2008,18 @@ int32_t lsm9ds1_pin_polarity_set(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
 /**
  * @brief  Configure the interrupt pin polarity.[get]
  *
- * @param  ctx_mag   Read / write magnetometer interface definitions.(ptr)
  * @param  ctx_imu   Read / write imu interface definitions.(ptr)
  * @param  val       Get the values of iea in reg INT_CFG_M.(ptr)
  * @retval           Interface status (MANDATORY: return 0 -> no Error).
  *
  */
-int32_t lsm9ds1_pin_polarity_get(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
+int32_t lsm9ds1_pin_polarity_get(lsm9ds1_ctx_t *ctx_imu,
                                  lsm9ds1_polarity_t *val) {
-  lsm9ds1_int_cfg_m_t int_cfg_m;
   lsm9ds1_ctrl_reg8_t ctrl_reg8;
   int32_t ret;
 
-  ret = lsm9ds1_read_reg(ctx_mag, LSM9DS1_INT_CFG_M, (uint8_t *)&int_cfg_m, 1);
-  if (ret == 0) {
-    ret =
-        lsm9ds1_read_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
-  }
-  switch (int_cfg_m.iea & (~ctrl_reg8.h_lactive)) {
+  ret = lsm9ds1_read_reg(ctx_imu, LSM9DS1_CTRL_REG8, (uint8_t *)&ctrl_reg8, 1);
+  switch ((~ctrl_reg8.h_lactive)) {
     case LSM9DS1_ACTIVE_LOW:
       *val = LSM9DS1_ACTIVE_LOW;
       break;
@@ -2555,19 +2032,6 @@ int32_t lsm9ds1_pin_polarity_get(lsm9ds1_ctx_t *ctx_mag, lsm9ds1_ctx_t *ctx_imu,
   }
   return ret;
 }
-
-/**
- * @}
- *
- */
-
-/**
- * @defgroup     LSM9DS1_Interrupt_on_threshold
- * @brief        This section group all the functions concerning the
- *               interrupt on threshold configuration
- * @{
- *
- */
 
 /**
  * @brief  Enable interrupt generation on threshold event.[set]
@@ -3077,115 +2541,6 @@ int32_t lsm9ds1_gy_trshld_min_sample_get(lsm9ds1_ctx_t *ctx, uint8_t *val) {
 
   return ret;
 }
-
-/**
- * @brief  Enable interrupt generation on threshold event.[set]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val     Enable interrupt generation on Z-axis. .
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_trshld_axis_set(lsm9ds1_ctx_t *ctx,
-                                    lsm9ds1_mag_trshld_axis_t val) {
-  lsm9ds1_int_cfg_m_t int_cfg_m;
-  int32_t ret;
-
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_INT_CFG_M, (uint8_t *)&int_cfg_m, 1);
-  if (ret == 0) {
-    int_cfg_m.zien = val.zien;
-    int_cfg_m.xien = val.xien;
-    int_cfg_m.yien = val.yien;
-    ret = lsm9ds1_write_reg(ctx, LSM9DS1_INT_CFG_M, (uint8_t *)&int_cfg_m, 1);
-  }
-
-  return ret;
-}
-
-/**
- * @brief  Enable interrupt generation on threshold event.[get]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val     Enable interrupt generation on Z-axis. .(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_trshld_axis_get(lsm9ds1_ctx_t *ctx,
-                                    lsm9ds1_mag_trshld_axis_t *val) {
-  lsm9ds1_int_cfg_m_t int_cfg_m;
-  int32_t ret;
-
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_INT_CFG_M, (uint8_t *)&int_cfg_m, 1);
-  val->zien = int_cfg_m.zien;
-  val->yien = int_cfg_m.yien;
-  val->xien = int_cfg_m.xien;
-
-  return ret;
-}
-
-/**
- * @brief  Magnetometer interrupt on threshold source.[get]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val     This bit signals when the interrupt event occurs.(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_trshld_src_get(lsm9ds1_ctx_t *ctx,
-                                   lsm9ds1_mag_trshld_src_t *val) {
-  lsm9ds1_int_src_m_t int_src_m;
-  int32_t ret;
-
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_INT_SRC_M, (uint8_t *)&int_src_m, 1);
-  val->_int = int_src_m._int;
-  val->nth_z = int_src_m.nth_z;
-  val->nth_y = int_src_m.nth_y;
-  val->nth_x = int_src_m.nth_x;
-  val->pth_z = int_src_m.pth_z;
-  val->pth_y = int_src_m.pth_y;
-  val->pth_x = int_src_m.pth_x;
-
-  return ret;
-}
-
-/**
- * @brief  The value is expressed in 15-bit unsigned.[get]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val    Iet the values of "ths" in reg INT_THS_L_M.(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_trshld_get(lsm9ds1_ctx_t *ctx, uint8_t *val) {
-  lsm9ds1_int_ths_l_m_t int_ths_l_m;
-  lsm9ds1_int_ths_h_m_t int_ths_h_m;
-  int32_t ret;
-
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_INT_THS_L_M, (uint8_t *)&int_ths_l_m, 1);
-  if (ret == 0) {
-    ret =
-        lsm9ds1_read_reg(ctx, LSM9DS1_INT_THS_H_M, (uint8_t *)&int_ths_h_m, 1);
-  }
-
-  *val = int_ths_h_m.ths;
-  *val = *val << 8;
-  *val += int_ths_l_m.ths;
-
-  return ret;
-}
-
-/**
- * @}
- *
- */
-
-/**
- * @defgroup     LSM9DS1_ Activity/Inactivity_detection
- * @brief        This section groups all the functions concerning
- *               activity/inactivity detection.
- * @{
- *
- */
 
 /**
  * @brief  Inactivity threshold.[set]
@@ -3841,49 +3196,5 @@ int32_t lsm9ds1_gy_self_test_get(lsm9ds1_ctx_t *ctx, uint8_t *val) {
 
   return ret;
 }
-
-/**
- * @brief  Enable/disable self-test mode for magnatic sensor.[set]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val    Change the values of st in reg CTRL_REG1_M.
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_self_test_set(lsm9ds1_ctx_t *ctx, uint8_t val) {
-  lsm9ds1_ctrl_reg1_m_t ctrl_reg1_m;
-  int32_t ret;
-
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_CTRL_REG1_M, (uint8_t *)&ctrl_reg1_m, 1);
-  if (ret == 0) {
-    ctrl_reg1_m.st = (uint8_t)val;
-    ret =
-        lsm9ds1_write_reg(ctx, LSM9DS1_CTRL_REG1_M, (uint8_t *)&ctrl_reg1_m, 1);
-  }
-  return ret;
-}
-
-/**
- * @brief  Enable/disable self-test mode for magnatic sensor.[get]
- *
- * @param  ctx    Read / write interface definitions.(ptr)
- * @param  val    Get the values of st in reg CTRL_REG1_M.(ptr)
- * @retval        Interface status (MANDATORY: return 0 -> no Error).
- *
- */
-int32_t lsm9ds1_mag_self_test_get(lsm9ds1_ctx_t *ctx, uint8_t *val) {
-  lsm9ds1_ctrl_reg1_m_t ctrl_reg1_m;
-  int32_t ret;
-
-  ret = lsm9ds1_read_reg(ctx, LSM9DS1_CTRL_REG1_M, (uint8_t *)&ctrl_reg1_m, 1);
-  *val = (uint8_t)ctrl_reg1_m.st;
-
-  return ret;
-}
-
-/**
- * @}
- *
- */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
