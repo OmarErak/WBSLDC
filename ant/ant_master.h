@@ -70,6 +70,8 @@ void ant_message_types_master_setup(void);
  */
 void ant_message_types_master_bsp_evt_handler(bsp_event_t evt);
 
+void send_broadcast(const uint8_t* data, uint8_t size);
+
 #ifdef __cplusplus
 }
 #endif

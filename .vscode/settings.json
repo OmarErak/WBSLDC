@@ -1,11 +1,13 @@
 {
     "files.associations": {
-        "sdk_config.h": "c",
-        "ant_message_types_master.h": "c",
-        "nrf_delay.h": "c",
-        "app_util_platform.h": "c",
-        "nrf_drv_twi.h": "c",
-        "app_error.h": "c"
+      "sdk_config.h": "c",
+      "ant_message_types_master.h": "c",
+      "nrf_delay.h": "c",
+      "app_util_platform.h": "c",
+      "nrf_drv_twi.h": "c",
+      "app_error.h": "c",
+      "arduino_nano_33_ble_sense.h": "c"
     },
-    "cortex-debug.variableUseNaturalFormat": false
+    "cortex-debug.variableUseNaturalFormat": false,
+    "cmake.configureOnOpen": false
 }
