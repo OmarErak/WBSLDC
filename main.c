@@ -186,10 +186,8 @@ int main(void) {
   softdevice_setup();
   NRF_LOG_INFO("Softdevice setup.");
 
-  ant_message_types_master_setup();
-  NRF_LOG_INFO("ANT message types setup.");
-
-  nrf_log_backend_rtt_init();
+  ant_master_setup();
+  printf("ANT message types setup.\r\n");
 
   /* Initialize inertial sensors (IMU) driver interface */
   uint8_t i2c_add_imu = LSM9DS1_IMU_I2C_ADD_H >> 1;

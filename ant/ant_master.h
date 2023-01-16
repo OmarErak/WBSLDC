@@ -62,7 +62,7 @@ extern "C" {
 /**@brief Function for configuring and starting ANT channel
  *
  */
-void ant_message_types_master_setup(void);
+void ant_master_setup(void);
 
 /**@brief Handles BSP events.
  *
@@ -70,7 +70,9 @@ void ant_message_types_master_setup(void);
  */
 void ant_message_types_master_bsp_evt_handler(bsp_event_t evt);
 
-void send_broadcast(const uint8_t* data, uint8_t size);
+void send_translation(const char* translation);
+
+void start_transmission(void);
 
 #ifdef __cplusplus
 }

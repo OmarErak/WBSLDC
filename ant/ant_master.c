@@ -64,39 +64,28 @@
 #include "sdk_config.h"
 #include "string.h"
 
-// I/O configuration
-#define LED_BROADCAST BSP_BOARD_LED_0
-#define LED_ACKNOWLEDGED BSP_BOARD_LED_1
-#define LED_BURST BSP_BOARD_LED_2
-
 // Channel configuration.
 #define ANT_CUSTOM_TRANSMIT_POWER \
   0u /**< ANT Custom Transmit Power (Invalid/Not Used). */
 #define BROADCAST_DATA_BUFFER_SIZE 8u  // < Size of the broadcast data buffer.
-#define BURST_BLOCK_SIZE \
-  32u  // < Size of data block transmitted via burst. Size must be divisible
-       // by 8.
+#define PAGE_MAX_CHARACTER_NUM \
+  9u  // < Maximum number of characters on a
+      // page.
 
 #define APP_ANT_OBSERVER_PRIO \
   1  // < Application's ANT observer priority. You shouldn't need to modify this
      // value.
+#define STATUS_BIT_MASK 0x01
+#define SEQ_NUM_MASK 0x3E
+#define CHARACTER_BYTE_MASK 0x3F
 
 // Static variables and buffers.
 static uint8_t
     m_tx_buffer[BROADCAST_DATA_BUFFER_SIZE];  // < Primary data
                                               // (Broadcast/Acknowledged)
                                               // transmit buffer.
-static uint8_t
-    m_burst_data[BURST_BLOCK_SIZE]; /**< Burst data transmit buffer. */
 
-// State Machine
-enum MESSAGE_TYPES_MASTER_STATES {
-  BROADCAST,
-  ACKNOWLEDGED,
-  BURST
-} state_message_types;
-
-void ant_message_types_master_setup(void) {
+void ant_master_setup(void) {
   uint32_t err_code;
 
   ant_channel_config_t channel_config = {
@@ -123,50 +112,68 @@ void ant_message_types_master_setup(void) {
   err_code = sd_ant_channel_open(ANT_CHANNEL_NUM);
   APP_ERROR_CHECK(err_code);
 
-  // Write counter value to last byte of the broadcast data.
-  // The last byte is chosen to get the data more visible in the end of an
-  // printout on the recieving end.
+  // Set default transmission buffer
   memset(m_tx_buffer, 0, BROADCAST_DATA_BUFFER_SIZE);
 
   // Configure the initial payload of the broadcast data
   err_code = sd_ant_broadcast_message_tx(
       ANT_CHANNEL_NUM, BROADCAST_DATA_BUFFER_SIZE, m_tx_buffer);
   APP_ERROR_CHECK(err_code);
-
-  // Set state to broadcasting
-  state_message_types = BROADCAST;
 }
 
-void ant_message_types_master_bsp_evt_handler(bsp_event_t evt) {
-  switch (evt) {
-    case BSP_EVENT_KEY_0:
-      state_message_types = BROADCAST;
-      break;
+void start_transmission(void) { m_tx_buffer[0] |= STATUS_BIT_MASK; }
 
-    case BSP_EVENT_KEY_1:
-      state_message_types = ACKNOWLEDGED;
-      break;
+void stop_transmission(void) { m_tx_buffer[0] &= ~STATUS_BIT_MASK; }
 
-    case BSP_EVENT_KEY_2:
-      state_message_types = BURST;
-      break;
-
-    default:
-      break;  // no implementation needed
-  }
+static void increment_sequence_number(void) {
+  uint8_t seq_num = (m_tx_buffer[0] & SEQ_NUM_MASK) >> 1;
+  m_tx_buffer[0] &= ~SEQ_NUM_MASK;
+  m_tx_buffer[0] |= (((seq_num + 1) << 1) & SEQ_NUM_MASK);
 }
 
-void send_broadcast(const uint8_t* data, uint8_t size) {
-  for (uint8_t i = 0; i < BROADCAST_DATA_BUFFER_SIZE - 1; i++) {
-    if (i < size)
-      m_tx_buffer[i] = data[i];
-    else
-      m_tx_buffer[i] = 0;
+static void populate_characters(const char* translation) {
+  uint8_t size = strlen(translation);
+  uint8_t bytes[PAGE_MAX_CHARACTER_NUM] = {63, 63, 63, 63, 63, 63, 63, 63, 63};
+  for (uint8_t i = 0; i < size; i++) {
+    bytes[i] = translation[i] == '\0' ? 63 : (uint8_t)translation[i] - 65;
+    if (bytes[i] > 25 && bytes[i] != 63) {
+      printf("Error: Invalid character in string\r\n");
+      return;
+    }
   }
+  m_tx_buffer[0] |= (bytes[0] & CHARACTER_BYTE_MASK) << 6;
+  m_tx_buffer[1] |= (bytes[0] & CHARACTER_BYTE_MASK) >> 2;
+  m_tx_buffer[1] |= (bytes[1] & CHARACTER_BYTE_MASK) << 4;
+  m_tx_buffer[2] |= (bytes[1] & CHARACTER_BYTE_MASK) >> 4;
+  m_tx_buffer[2] |= (bytes[2] & CHARACTER_BYTE_MASK) << 2;
+  m_tx_buffer[3] |= bytes[3] & CHARACTER_BYTE_MASK;
+  m_tx_buffer[3] |= (bytes[4] & CHARACTER_BYTE_MASK) << 6;
+  m_tx_buffer[4] |= (bytes[4] & CHARACTER_BYTE_MASK) >> 2;
+  m_tx_buffer[4] |= (bytes[5] & CHARACTER_BYTE_MASK) << 4;
+  m_tx_buffer[5] |= (bytes[5] & CHARACTER_BYTE_MASK) >> 4;
+  m_tx_buffer[5] |= (bytes[6] & CHARACTER_BYTE_MASK) << 2;
+  m_tx_buffer[6] |= bytes[7] & CHARACTER_BYTE_MASK;
+  m_tx_buffer[6] |= (bytes[8] & CHARACTER_BYTE_MASK) << 6;
+  m_tx_buffer[7] = 0;
+  m_tx_buffer[7] |= (bytes[8] & CHARACTER_BYTE_MASK) >> 2;
+}
+
+void send_translation(const char* translation) {
+  uint8_t size = strlen(translation) + 1;
+
+  if (size > PAGE_MAX_CHARACTER_NUM) {
+    printf("Error: String too long to send over ANT\r\n");
+    printf("Multiple pages not supported\r\n");
+    return;
+  }
+
+  start_transmission();
+  increment_sequence_number();
+  populate_characters(translation);
+
   uint32_t err_code = sd_ant_broadcast_message_tx(
       ANT_CHANNEL_NUM, BROADCAST_DATA_BUFFER_SIZE, m_tx_buffer);
   APP_ERROR_CHECK(err_code);
-  state_message_types = BROADCAST;
 }
 
 /**@brief Function for handling a ANT stack event.
@@ -176,62 +183,20 @@ void send_broadcast(const uint8_t* data, uint8_t size) {
  */
 static void ant_evt_handler(ant_evt_t* p_ant_evt, void* p_context) {
   uint32_t err_code;
-  uint32_t led_output = LED_BROADCAST;
 
   switch (p_ant_evt->event) {
-    // ANT broadcast/Acknowledged/Burst Success
-    // Send the next message according to the current state and increment the
-    // counter.
+    // Send the next message according to the current state.
     case EVENT_TX:                     // Intentional fall through
     case EVENT_TRANSFER_TX_COMPLETED:  // Intentional fall through
     case EVENT_TRANSFER_TX_FAILED:
-      bsp_board_leds_off();
-
-      if (state_message_types == BROADCAST) {
-        // Send as broadcast
-        err_code = sd_ant_broadcast_message_tx(
-            ANT_CHANNEL_NUM, BROADCAST_DATA_BUFFER_SIZE, m_tx_buffer);
-        APP_ERROR_CHECK(err_code);
-
-        led_output = LED_BROADCAST;
-      } else if (state_message_types == ACKNOWLEDGED) {
-        // Send as acknowledged
-        err_code = sd_ant_acknowledge_message_tx(
-            ANT_CHANNEL_NUM, BROADCAST_DATA_BUFFER_SIZE, m_tx_buffer);
-        APP_ERROR_CHECK(err_code);
-
-        led_output = LED_ACKNOWLEDGED;
-      } else if (state_message_types == BURST) {
-        // If this is a new message, populate the burst buffer
-        // with new dummy data.  Otherwise, will retry sending the
-        // same content.
-        if (p_ant_evt->event != EVENT_TRANSFER_TX_FAILED) {
-          for (uint32_t i = 0; i < BURST_BLOCK_SIZE; i++) {
-          }
-        }
-
-        // Queue a Burst Transfer.  Since this is a small burst, queue entire
-        // burst.
-        err_code = sd_ant_burst_handler_request(
-            ANT_CHANNEL_NUM, BURST_BLOCK_SIZE, m_burst_data,
-            (BURST_SEGMENT_START | BURST_SEGMENT_END));
-        APP_ERROR_CHECK(err_code);
-
-        led_output = LED_BURST;
-      }
-      // Activate LED for 20ms
-      bsp_board_led_on(led_output);
-      nrf_delay_ms(20);
-      bsp_board_led_off(led_output);
-
-      break;
-
+      // Rebroadcast the same data.
+      err_code = sd_ant_broadcast_message_tx(
+          ANT_CHANNEL_NUM, BROADCAST_DATA_BUFFER_SIZE, m_tx_buffer);
+      APP_ERROR_CHECK(err_code);
     case TRANSFER_IN_PROGRESS:            // Intentional fall through
     case TRANSFER_SEQUENCE_NUMBER_ERROR:  // Intentional fall through
     case TRANSFER_IN_ERROR:               // Intentional fall through
     case TRANSFER_BUSY:
-      // Ignore these events; will retry burst transfer when we get the
-      // EVENT_TRANSFER_TX_FAILED event.
       break;
 
     default:
