@@ -60,6 +60,7 @@
 #include "app_error.h"
 #include "boards.h"
 #include "nrf_delay.h"
+#include "nrf_log.h"
 #include "nrf_sdh_ant.h"
 #include "sdk_config.h"
 #include "string.h"
@@ -68,6 +69,7 @@
 #define ANT_CUSTOM_TRANSMIT_POWER \
   0u /**< ANT Custom Transmit Power (Invalid/Not Used). */
 #define BROADCAST_DATA_BUFFER_SIZE 8u  // < Size of the broadcast data buffer.
+#define TRANSLATION_BUFFER_SIZE 64u    // < Size of the translation buffer.
 #define PAGE_MAX_CHARACTER_NUM \
   9u  // < Maximum number of characters on a
       // page.
@@ -84,6 +86,12 @@ static uint8_t
     m_tx_buffer[BROADCAST_DATA_BUFFER_SIZE];  // < Primary data
                                               // (Broadcast/Acknowledged)
                                               // transmit buffer.
+
+static uint8_t labels[4][9] = {{0xF, 0xB, 0x4, 0x0, 0x12, 0x4, 63, 63, 63},
+                               {0x13, 0x7, 0x0, 0xD, 0xA, 0x14, 63, 63, 63},
+                               {0x18, 0x4, 0x12, 63, 63, 63, 63, 63, 63}};
+
+static uint8_t m_prev_index = 0xFF;
 
 void ant_master_setup(void) {
   uint32_t err_code;
@@ -131,45 +139,36 @@ static void increment_sequence_number(void) {
   m_tx_buffer[0] |= (((seq_num + 1) << 1) & SEQ_NUM_MASK);
 }
 
-static void populate_characters(const char* translation) {
-  uint8_t size = strlen(translation);
-  uint8_t bytes[PAGE_MAX_CHARACTER_NUM] = {63, 63, 63, 63, 63, 63, 63, 63, 63};
-  for (uint8_t i = 0; i < size; i++) {
-    bytes[i] = translation[i] == '\0' ? 63 : (uint8_t)translation[i] - 65;
-    if (bytes[i] > 25 && bytes[i] != 63) {
-      printf("Error: Invalid character in string\r\n");
-      return;
-    }
-  }
-  m_tx_buffer[0] |= (bytes[0] & CHARACTER_BYTE_MASK) << 6;
-  m_tx_buffer[1] |= (bytes[0] & CHARACTER_BYTE_MASK) >> 2;
-  m_tx_buffer[1] |= (bytes[1] & CHARACTER_BYTE_MASK) << 4;
-  m_tx_buffer[2] |= (bytes[1] & CHARACTER_BYTE_MASK) >> 4;
-  m_tx_buffer[2] |= (bytes[2] & CHARACTER_BYTE_MASK) << 2;
-  m_tx_buffer[3] |= bytes[3] & CHARACTER_BYTE_MASK;
-  m_tx_buffer[3] |= (bytes[4] & CHARACTER_BYTE_MASK) << 6;
-  m_tx_buffer[4] |= (bytes[4] & CHARACTER_BYTE_MASK) >> 2;
-  m_tx_buffer[4] |= (bytes[5] & CHARACTER_BYTE_MASK) << 4;
-  m_tx_buffer[5] |= (bytes[5] & CHARACTER_BYTE_MASK) >> 4;
-  m_tx_buffer[5] |= (bytes[6] & CHARACTER_BYTE_MASK) << 2;
-  m_tx_buffer[6] |= bytes[7] & CHARACTER_BYTE_MASK;
-  m_tx_buffer[6] |= (bytes[8] & CHARACTER_BYTE_MASK) << 6;
+static void populate_characters(uint8_t index) {
+  m_tx_buffer[0] |= (labels[index][0] & CHARACTER_BYTE_MASK) << 6;
+  m_tx_buffer[1] |= (labels[index][0] & CHARACTER_BYTE_MASK) >> 2;
+  m_tx_buffer[1] |= (labels[index][1] & CHARACTER_BYTE_MASK) << 4;
+  m_tx_buffer[2] |= (labels[index][1] & CHARACTER_BYTE_MASK) >> 4;
+  m_tx_buffer[2] |= (labels[index][2] & CHARACTER_BYTE_MASK) << 2;
+  m_tx_buffer[3] |= labels[index][3] & CHARACTER_BYTE_MASK;
+  m_tx_buffer[3] |= (labels[index][4] & CHARACTER_BYTE_MASK) << 6;
+  m_tx_buffer[4] |= (labels[index][4] & CHARACTER_BYTE_MASK) >> 2;
+  m_tx_buffer[4] |= (labels[index][5] & CHARACTER_BYTE_MASK) << 4;
+  m_tx_buffer[5] |= (labels[index][5] & CHARACTER_BYTE_MASK) >> 4;
+  m_tx_buffer[5] |= (labels[index][6] & CHARACTER_BYTE_MASK) << 2;
+  m_tx_buffer[6] |= labels[index][7] & CHARACTER_BYTE_MASK;
+  m_tx_buffer[6] |= (labels[index][8] & CHARACTER_BYTE_MASK) << 6;
   m_tx_buffer[7] = 0;
-  m_tx_buffer[7] |= (bytes[8] & CHARACTER_BYTE_MASK) >> 2;
+  m_tx_buffer[7] |= (labels[index][8] & CHARACTER_BYTE_MASK) >> 2;
 }
 
-void send_translation(const char* translation) {
-  uint8_t size = strlen(translation) + 1;
-
-  if (size > PAGE_MAX_CHARACTER_NUM) {
-    printf("Error: String too long to send over ANT\r\n");
-    printf("Multiple pages not supported\r\n");
+void send_translation(uint8_t index) {
+  if (index == m_prev_index) {
     return;
   }
 
+  m_prev_index = index;
+
   start_transmission();
   increment_sequence_number();
-  populate_characters(translation);
+  populate_characters(index);
+
+  NRF_LOG_INFO("Sending translation: %d", index);
 
   uint32_t err_code = sd_ant_broadcast_message_tx(
       ANT_CHANNEL_NUM, BROADCAST_DATA_BUFFER_SIZE, m_tx_buffer);

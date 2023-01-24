@@ -74,8 +74,6 @@ static axis3bit16_t data_raw_acceleration;
 static axis3bit16_t data_raw_angular_rate;
 static float feature[6];
 
-static uint8_t ant_buffer[8];
-
 /* TWI instance. */
 static const nrf_drv_twi_t m_twi = NRF_DRV_TWI_INSTANCE(TWI_INSTANCE_ID);
 uint8_t register_address = 0x0F;  // Address of the who am i register to be read
@@ -101,6 +99,7 @@ static int32_t platform_write(void *handle, uint8_t reg, uint8_t *bufp,
   memcpy(buffer, &reg, 1);
   memcpy(buffer + 1, bufp, len);
   err_code = nrf_drv_twi_tx(&m_twi, *i2c_address, buffer, len + 1, true);
+  APP_ERROR_CHECK(err_code);
   NRF_LOG_FLUSH();
   return 0;
 }
@@ -112,8 +111,8 @@ static void twi_init(void) {
   ret_code_t err_code;
 
   const nrf_drv_twi_config_t twi_config = {
-      .scl = NRF_GPIO_PIN_MAP(0, 26),
-      .sda = NRF_GPIO_PIN_MAP(0, 27),
+      .scl = ARDUINO_SCL1_PIN,
+      .sda = ARDUINO_SDA1_PIN,
       .frequency = NRF_DRV_TWI_FREQ_100K,
       .interrupt_priority = APP_IRQ_PRIORITY_LOW,
       .clear_bus_init = false};
@@ -122,28 +121,28 @@ static void twi_init(void) {
   APP_ERROR_CHECK(err_code);
 
   nrf_drv_twi_enable(&m_twi);
-  // nrf_gpio_cfg(ARDUINO_SDA1_PIN, NRF_GPIO_PIN_DIR_INPUT,
-  //              NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP,
-  //              NRF_GPIO_PIN_H0D1, NRF_GPIO_PIN_NOSENSE);
-  // nrf_gpio_cfg(ARDUINO_SCL1_PIN, NRF_GPIO_PIN_DIR_INPUT,
-  //              NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP,
-  //              NRF_GPIO_PIN_H0D1, NRF_GPIO_PIN_NOSENSE);
+  nrf_gpio_cfg(ARDUINO_SDA1_PIN, NRF_GPIO_PIN_DIR_INPUT,
+               NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP,
+               NRF_GPIO_PIN_H0D1, NRF_GPIO_PIN_NOSENSE);
+  nrf_gpio_cfg(ARDUINO_SCL1_PIN, NRF_GPIO_PIN_DIR_INPUT,
+               NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP,
+               NRF_GPIO_PIN_H0D1, NRF_GPIO_PIN_NOSENSE);
 }
 
 /**
  * @brief Powering up capacitors and initializing pullup resistor.
  */
 static void powerup_init(void) {
-  // nrf_gpio_pin_set(VDD_ENV_PIN);
-  // nrf_gpio_pin_set(R_PULLUP_PIN);
-  // // Power up and wait for voltage to rise
-  // nrf_gpio_cfg(VDD_ENV_PIN, NRF_GPIO_PIN_DIR_OUTPUT,
-  //              NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_NOPULL,
-  //              NRF_GPIO_PIN_S0H1, NRF_GPIO_PIN_NOSENSE);
-  // nrf_gpio_cfg(R_PULLUP_PIN, NRF_GPIO_PIN_DIR_OUTPUT,
-  //              NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_NOPULL,
-  //              NRF_GPIO_PIN_S0H1, NRF_GPIO_PIN_NOSENSE);
-  // nrf_delay_ms(4);
+  nrf_gpio_pin_set(VDD_ENV_PIN);
+  nrf_gpio_pin_set(R_PULLUP_PIN);
+  // Power up and wait for voltage to rise
+  nrf_gpio_cfg(VDD_ENV_PIN, NRF_GPIO_PIN_DIR_OUTPUT,
+               NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_NOPULL,
+               NRF_GPIO_PIN_S0H1, NRF_GPIO_PIN_NOSENSE);
+  nrf_gpio_cfg(R_PULLUP_PIN, NRF_GPIO_PIN_DIR_OUTPUT,
+               NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_NOPULL,
+               NRF_GPIO_PIN_S0H1, NRF_GPIO_PIN_NOSENSE);
+  nrf_delay_ms(4);
   ret_code_t err_code = nrf_pwr_mgmt_init();
   APP_ERROR_CHECK(err_code);
 }
@@ -165,6 +164,7 @@ static int get_feature_data(size_t offset, size_t length, float *out_ptr) {
   float features[length];
   feature_fifo_get(features, length);
   memcpy(out_ptr, features, length * sizeof(float));
+  return 0;
 }
 
 EI_IMPULSE_ERROR run_classifier(signal_t *, ei_impulse_result_t *, bool);
@@ -187,7 +187,7 @@ int main(void) {
   NRF_LOG_INFO("Softdevice setup.");
 
   ant_master_setup();
-  printf("ANT message types setup.\r\n");
+  NRF_LOG_INFO("ANT message types setup.\r\n");
 
   /* Initialize inertial sensors (IMU) driver interface */
   uint8_t i2c_add_imu = LSM9DS1_IMU_I2C_ADD_H >> 1;
@@ -231,9 +231,6 @@ int main(void) {
   uint8_t imu_fifo_count = 0;
 
   while (true) {
-    // uint8_t cr = 0xFC;
-    // while (app_uart_put(cr) != NRF_SUCCESS);
-
     /* Read device status register */
     lsm9ds1_dev_status_get(&dev_ctx_imu, &reg);
 
@@ -271,30 +268,25 @@ int main(void) {
         signal.get_data = &get_feature_data;
         ei_impulse_result_t result;
         EI_IMPULSE_ERROR res = run_classifier(&signal, &result, true);
+        if (res != EI_IMPULSE_OK) {
+          NRF_LOG_INFO("ERR: Failed to run classifier (%d)", res);
+          continue;
+        }
 
-        NRF_LOG_INFO("Classified as: %s (%d)", result.classification[0].label,
-                     (int)result.classification[0].value * 100);
-        NRF_LOG_INFO("Other possibilities: %s (%d), %s (%d), %s (%d)",
-                     result.classification[1].label,
-                     (int)result.classification[1].value * 100,
-                     result.classification[2].label,
-                     (int)result.classification[2].value * 100,
-                     result.classification[3].label,
-                     (int)result.classification[3].value * 100);
-
-        // memset(ant_buffer, 0, sizeof(ant_buffer));
-        // ant_buffer[4] = (uint8_t) result.classification[0].value * 100;
-        // ant_buffer[5] = (uint8_t) result.classification[1].value * 100;
-        // ant_buffer[6] = (uint8_t) result.classification[2].value * 100;
-        // ant_buffer[7] = (uint8_t) result.classification[3].value * 100;
+        uint8_t max_index = 0;
+        for (uint8_t i = 1; i < EI_CLASSIFIER_LABEL_COUNT; i++) {
+          if (result.classification[i].value >
+              result.classification[max_index].value) {
+            max_index = i;
+          }
+        }
+        NRF_LOG_INFO("Classification: %d %d%%", max_index,
+                     (int)(result.classification[max_index].value * 100));
+        if (result.classification[max_index].value > 0.9) {
+          send_translation(max_index);
+        }
       }
     }
-    // ant_buffer[1] = (uint8_t) (fifo_count & 0xFF0000) >> 16;
-    // ant_buffer[2] = (uint8_t) (fifo_count & 0xFF00) >> 8;
-    // ant_buffer[3] = (uint8_t) (fifo_count & 0xFF);
-    // send_broadcast(ant_buffer, 8);
-
-    // nrf_pwr_mgmt_run();
   }
 }
 

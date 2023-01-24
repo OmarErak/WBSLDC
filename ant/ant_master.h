@@ -70,7 +70,7 @@ void ant_master_setup(void);
  */
 void ant_message_types_master_bsp_evt_handler(bsp_event_t evt);
 
-void send_translation(const char* translation);
+void send_translation(uint8_t index);
 
 void start_transmission(void);
 
