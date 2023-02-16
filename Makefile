@@ -14,23 +14,6 @@ SRC_FILES += \
   $(EI_DIR)/edge-impulse-sdk/porting/debug_log.cpp \
   $(EI_DIR)/edge-impulse-sdk/porting/ei_classifier_porting.cpp \
   $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/c/common.c \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/classifier/*.cpp) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/BasicMathFunctions/*.c) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/CommonTables/*.c) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/FastMathFunctions/*.c) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/StatisticsFunctions/*.c) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*bit*.c) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*fft*.c) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/dsp/dct/*.cpp) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/dsp/kissfft/*.cpp) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/dsp/memory.cpp) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/core/api/*.cpp) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/kernels/*.cpp) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cpp) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/micro/*.cpp) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cpp) \
-  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cpp) \
-  $(wildcard $(EI_DIR)/tflite-model/*.cpp) \
   $(PROJ_DIR)/ant/ant_master.c \
   $(PROJ_DIR)/drivers/lsm9ds1/lsm9ds1_reg.c \
   $(PROJ_DIR)/main.c \
@@ -42,6 +25,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/bsp/bsp.c \
   $(SDK_ROOT)/components/libraries/button/app_button.c \
   $(SDK_ROOT)/components/libraries/experimental_section_vars/nrf_section_iter.c \
+	$(SDK_ROOT)/components/libraries/fifo/app_fifo.c \
   $(SDK_ROOT)/components/libraries/hardfault/hardfault_implementation.c \
   $(SDK_ROOT)/components/libraries/hardfault/nrf52/handler/hardfault_handler_gcc.c \
   $(SDK_ROOT)/components/libraries/log/src/nrf_log_backend_rtt.c \
@@ -50,6 +34,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/log/src/nrf_log_default_backends.c \
   $(SDK_ROOT)/components/libraries/log/src/nrf_log_frontend.c \
   $(SDK_ROOT)/components/libraries/log/src/nrf_log_str_formatter.c \
+  $(SDK_ROOT)/components/libraries/mem_manager/mem_manager.c \
   $(SDK_ROOT)/components/libraries/memobj/nrf_memobj.c \
   $(SDK_ROOT)/components/libraries/pwr_mgmt/nrf_pwr_mgmt.c \
   $(SDK_ROOT)/components/libraries/ringbuf/nrf_ringbuf.c \
@@ -58,6 +43,8 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/strerror/nrf_strerror.c \
   $(SDK_ROOT)/components/libraries/timer/app_timer2.c \
   $(SDK_ROOT)/components/libraries/timer/drv_rtc.c \
+  $(SDK_ROOT)/components/libraries/uart/app_uart_fifo.c \
+  $(SDK_ROOT)/components/libraries/uart/retarget.c \
   $(SDK_ROOT)/components/libraries/util/app_error_handler_gcc.c \
   $(SDK_ROOT)/components/libraries/util/app_error_weak.c \
   $(SDK_ROOT)/components/libraries/util/app_error.c \
@@ -82,6 +69,23 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
   $(SDK_ROOT)/modules/nrfx/soc/nrfx_atomic.c \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/classifier/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/BasicMathFunctions/*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/CommonTables/*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/FastMathFunctions/*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/StatisticsFunctions/*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*bit*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*fft*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/dsp/dct/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/dsp/kissfft/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/dsp/memory.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/core/api/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/kernels/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/micro/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cpp) \
+  $(wildcard $(EI_DIR)/tflite-model/*.cpp) \
 
 # Include folders common to all targets
 INC_FOLDERS += \
@@ -99,10 +103,12 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/button \
   $(SDK_ROOT)/components/libraries/delay \
   $(SDK_ROOT)/components/libraries/experimental_section_vars \
+	$(SDK_ROOT)/components/libraries/fifo \
   $(SDK_ROOT)/components/libraries/hardfault \
   $(SDK_ROOT)/components/libraries/hardfault/nrf52 \
   $(SDK_ROOT)/components/libraries/log \
   $(SDK_ROOT)/components/libraries/log/src \
+  $(SDK_ROOT)/components/libraries/mem_manager \
   $(SDK_ROOT)/components/libraries/memobj \
   $(SDK_ROOT)/components/libraries/mutex \
   $(SDK_ROOT)/components/libraries/pwr_mgmt \
@@ -111,6 +117,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/sortlist \
   $(SDK_ROOT)/components/libraries/strerror \
   $(SDK_ROOT)/components/libraries/timer \
+  $(SDK_ROOT)/components/libraries/uart \
   $(SDK_ROOT)/components/libraries/util \
   $(SDK_ROOT)/components/softdevice/common \
   $(SDK_ROOT)/components/softdevice/s340/headers \
@@ -218,7 +225,7 @@ $(foreach target, $(TARGETS), $(call define_target, $(target)))
 # Flash the program
 flash: default
 	@echo Flashing: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
-	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --sectorerase
+	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --sectorerase --verify
 	nrfjprog -f nrf52 --reset
 
 erase:
