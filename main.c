@@ -117,8 +117,8 @@ static void twi_init(void) {
   ret_code_t err_code;
 
   const nrf_drv_twi_config_t twi_config = {
-      .scl = ARDUINO_SCL1_PIN,
-      .sda = ARDUINO_SDA1_PIN,
+      .scl = NRF_GPIO_PIN_MAP(0, 26),
+      .sda = NRF_GPIO_PIN_MAP(0, 27),
       .frequency = NRF_DRV_TWI_FREQ_100K,
       .interrupt_priority = APP_IRQ_PRIORITY_LOW,
       .clear_bus_init = false};
@@ -127,28 +127,28 @@ static void twi_init(void) {
   APP_ERROR_CHECK(err_code);
 
   nrf_drv_twi_enable(&m_twi);
-  nrf_gpio_cfg(ARDUINO_SDA1_PIN, NRF_GPIO_PIN_DIR_INPUT,
-               NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP,
-               NRF_GPIO_PIN_H0D1, NRF_GPIO_PIN_NOSENSE);
-  nrf_gpio_cfg(ARDUINO_SCL1_PIN, NRF_GPIO_PIN_DIR_INPUT,
-               NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP,
-               NRF_GPIO_PIN_H0D1, NRF_GPIO_PIN_NOSENSE);
+  // nrf_gpio_cfg(ARDUINO_SDA1_PIN, NRF_GPIO_PIN_DIR_INPUT,
+  //              NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP,
+  //              NRF_GPIO_PIN_H0D1, NRF_GPIO_PIN_NOSENSE);
+  // nrf_gpio_cfg(ARDUINO_SCL1_PIN, NRF_GPIO_PIN_DIR_INPUT,
+  //              NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP,
+  //              NRF_GPIO_PIN_H0D1, NRF_GPIO_PIN_NOSENSE);
 }
 
 /**
  * @brief Powering up capacitors and initializing pullup resistor.
  */
 static void powerup_init(void) {
-  nrf_gpio_pin_set(VDD_ENV_PIN);
-  nrf_gpio_pin_set(R_PULLUP_PIN);
-  // Power up and wait for voltage to rise
-  nrf_gpio_cfg(VDD_ENV_PIN, NRF_GPIO_PIN_DIR_OUTPUT,
-               NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_NOPULL,
-               NRF_GPIO_PIN_S0H1, NRF_GPIO_PIN_NOSENSE);
-  nrf_gpio_cfg(R_PULLUP_PIN, NRF_GPIO_PIN_DIR_OUTPUT,
-               NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_NOPULL,
-               NRF_GPIO_PIN_S0H1, NRF_GPIO_PIN_NOSENSE);
-  nrf_delay_ms(4);
+  // nrf_gpio_pin_set(VDD_ENV_PIN);
+  // nrf_gpio_pin_set(R_PULLUP_PIN);
+  // // Power up and wait for voltage to rise
+  // nrf_gpio_cfg(VDD_ENV_PIN, NRF_GPIO_PIN_DIR_OUTPUT,
+  //              NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_NOPULL,
+  //              NRF_GPIO_PIN_S0H1, NRF_GPIO_PIN_NOSENSE);
+  // nrf_gpio_cfg(R_PULLUP_PIN, NRF_GPIO_PIN_DIR_OUTPUT,
+  //              NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_NOPULL,
+  //              NRF_GPIO_PIN_S0H1, NRF_GPIO_PIN_NOSENSE);
+  // nrf_delay_ms(4);
   ret_code_t err_code = nrf_pwr_mgmt_init();
   APP_ERROR_CHECK(err_code);
 }
@@ -366,7 +366,7 @@ int main(void) {
     // ant_buffer[3] = (uint8_t) (fifo_count & 0xFF);
     // send_broadcast(ant_buffer, 8);
 
-    nrf_pwr_mgmt_run();
+    // nrf_pwr_mgmt_run();
   }
 }
 
