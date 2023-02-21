@@ -65,7 +65,7 @@
 #define TWI_INSTANCE_ID 0
 
 /* FIFO Buffer Size (Model input * 2) */
-#define FIFO_BUFFER_SIZE EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE * 2
+#define FIFO_BUFFER_SIZE (EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE * 2) / 6
 
 /* Private variables ---------------------------------------------------------*/
 static lsm9ds1_id_t whoamI;
@@ -74,10 +74,19 @@ static axis3bit16_t data_raw_acceleration;
 static axis3bit16_t data_raw_angular_rate;
 static float imu_data[6];
 static uint16_t fifo_data_index = 0;
-static app_fifo_t feature_fifo;
-static uint8_t feature_fifo_buffer[4096];  // Must be power of 2
-const uint8_t sample_size = 3;
-const uint8_t double_sample_size = 12;
+static app_fifo_t xl_x_fifo;
+static app_fifo_t xl_y_fifo;
+static app_fifo_t xl_z_fifo;
+static app_fifo_t g_x_fifo;
+static app_fifo_t g_y_fifo;
+static app_fifo_t g_z_fifo;
+static uint8_t xl_x_fifo_buffer[512];  // Must be power of 2
+static uint8_t xl_y_fifo_buffer[512];  // Must be power of 2
+static uint8_t xl_z_fifo_buffer[512];  // Must be power of 2
+static uint8_t g_x_fifo_buffer[512];   // Must be power of 2
+static uint8_t g_y_fifo_buffer[512];   // Must be power of 2
+static uint8_t g_z_fifo_buffer[512];   // Must be power of 2
+const uint8_t sample_size = 2;
 
 static uint8_t ant_buffer[8];
 
@@ -166,26 +175,52 @@ static void softdevice_setup(void) {
   APP_ERROR_CHECK(err_code);
 }
 
+static int16_t get_sample(uint8_t hb, uint8_t lb) {
+  uint16_t sample = (hb << 8) | lb;
+  if (sample & 0x8000) {
+    sample &= 0x7FFF;
+    return -sample;
+  }
+  return (int16_t)sample;
+}
+
 static int get_feature_data(size_t offset, size_t length, float *out_ptr) {
-  uint8_t fifo_buffer[length * 2];
-  uint32_t err_code = app_fifo_read(&feature_fifo, fifo_buffer, length * 2);
+  uint16_t buffer_length = (length * 2) / 6;
+  uint8_t xl_x_buffer[buffer_length];
+  uint8_t xl_y_buffer[buffer_length];
+  uint8_t xl_z_buffer[buffer_length];
+  uint8_t g_x_buffer[buffer_length];
+  uint8_t g_y_buffer[buffer_length];
+  uint8_t g_z_buffer[buffer_length];
+  uint32_t err_code = app_fifo_read(&xl_x_fifo, xl_x_buffer, &buffer_length);
+  APP_ERROR_CHECK(err_code);
+  err_code = app_fifo_read(&xl_y_fifo, xl_y_buffer, &buffer_length);
+  APP_ERROR_CHECK(err_code);
+  err_code = app_fifo_read(&xl_z_fifo, xl_z_buffer, &buffer_length);
+  APP_ERROR_CHECK(err_code);
+  err_code = app_fifo_read(&g_x_fifo, g_x_buffer, &buffer_length);
+  APP_ERROR_CHECK(err_code);
+  err_code = app_fifo_read(&g_y_fifo, g_y_buffer, &buffer_length);
+  APP_ERROR_CHECK(err_code);
+  err_code = app_fifo_read(&g_z_fifo, g_z_buffer, &buffer_length);
   APP_ERROR_CHECK(err_code);
 
   NRF_LOG_INFO("Retrieving %d samples from FIFO", length);
 
-  for (size_t i = 0; i < length; i += 6) {
+  for (uint16_t i = 0; i < length; i += 6) {
+    uint16_t index = i / 6;
     out_ptr[i] = lsm9ds1_from_fs4g_to_mg(
-        ((int16_t)(~((fifo_buffer[i + 1] << 8) | fifo_buffer[i]))));
+        get_sample(xl_x_buffer[index + 1], xl_x_buffer[index]));
     out_ptr[i + 2] = lsm9ds1_from_fs4g_to_mg(
-        ((int16_t)(~(fifo_buffer[i + 3] << 8) | fifo_buffer[i + 2])));
+        get_sample(xl_y_buffer[index + 1], xl_y_buffer[index]));
     out_ptr[i + 4] = lsm9ds1_from_fs4g_to_mg(
-        ((int16_t)(~(fifo_buffer[i + 5] << 8) | fifo_buffer[i + 4])));
+        get_sample(xl_z_buffer[index + 1], xl_z_buffer[index]));
     out_ptr[i + 1] = lsm9ds1_from_fs2000dps_to_mdps(
-        ((int16_t)(~(fifo_buffer[i + 7] << 8) | fifo_buffer[i + 6])));
+        get_sample(g_x_buffer[index + 1], g_x_buffer[index]));
     out_ptr[i + 3] = lsm9ds1_from_fs2000dps_to_mdps(
-        ((int16_t)(~(fifo_buffer[i + 9] << 8) | fifo_buffer[i + 8])));
+        get_sample(g_y_buffer[index + 1], g_y_buffer[index]));
     out_ptr[i + 5] = lsm9ds1_from_fs2000dps_to_mdps(
-        ((int16_t)(~(fifo_buffer[i + 11] << 8) | fifo_buffer[i + 10])));
+        get_sample(g_z_buffer[index + 1], g_z_buffer[index]));
   }
 
   NRF_LOG_INFO("Retrieved %d samples from FIFO", length);
@@ -222,13 +257,31 @@ int main(void) {
   softdevice_setup();
   NRF_LOG_INFO("Softdevice setup.");
 
-  ant_message_types_master_setup();
-  NRF_LOG_INFO("ANT message types setup.");
+  // ant_message_types_master_setup();
+  // NRF_LOG_INFO("ANT message types setup.");
 
   nrf_log_backend_rtt_init();
 
-  uint32_t err_code = app_fifo_init(&feature_fifo, feature_fifo_buffer,
-                                    sizeof(feature_fifo_buffer));
+  uint32_t err_code =
+      app_fifo_init(&xl_x_fifo, xl_x_fifo_buffer, sizeof(xl_x_fifo_buffer));
+  APP_ERROR_CHECK(err_code);
+
+  err_code =
+      app_fifo_init(&xl_y_fifo, xl_y_fifo_buffer, sizeof(xl_y_fifo_buffer));
+  APP_ERROR_CHECK(err_code);
+
+  err_code =
+      app_fifo_init(&xl_z_fifo, xl_z_fifo_buffer, sizeof(xl_z_fifo_buffer));
+  APP_ERROR_CHECK(err_code);
+
+  err_code = app_fifo_init(&g_x_fifo, g_x_fifo_buffer, sizeof(g_x_fifo_buffer));
+  APP_ERROR_CHECK(err_code);
+
+  err_code = app_fifo_init(&g_y_fifo, g_y_fifo_buffer, sizeof(g_y_fifo_buffer));
+  APP_ERROR_CHECK(err_code);
+
+  err_code = app_fifo_init(&g_z_fifo, g_z_fifo_buffer, sizeof(g_z_fifo_buffer));
+  APP_ERROR_CHECK(err_code);
 
   // const app_uart_comm_params_t comm_params = {
   //   RX_PIN_NUMBER,
@@ -266,32 +319,29 @@ int main(void) {
   }
   NRF_LOG_INFO("Who am I register [IMU]: 0x%x", whoamI);
 
+  /* Enable FIFO */
+  lsm9ds1_fifo_mode_set(&dev_ctx_imu, LSM9DS1_STREAM_MODE);
+
   /* Enable Block Data Update */
   lsm9ds1_block_data_update_set(&dev_ctx_imu, PROPERTY_ENABLE);
-
   /* Set full scale */
   lsm9ds1_xl_full_scale_set(&dev_ctx_imu, LSM9DS1_4g);
   lsm9ds1_gy_full_scale_set(&dev_ctx_imu, LSM9DS1_2000dps);
-
   /* Configure filtering chain - See datasheet for filtering chain details */
   /* Accelerometer filtering chain */
   lsm9ds1_xl_filter_aalias_bandwidth_set(&dev_ctx_imu, LSM9DS1_AUTO);
   lsm9ds1_xl_filter_lp_bandwidth_set(&dev_ctx_imu, LSM9DS1_LP_ODR_DIV_100);
-  lsm9ds1_xl_filter_out_path_set(&dev_ctx_imu, LSM9DS1_HP_OUT);
+  lsm9ds1_xl_filter_out_path_set(&dev_ctx_imu, LSM9DS1_LP_OUT);
   /* Gyroscope filtering chain */
   lsm9ds1_gy_filter_lp_bandwidth_set(&dev_ctx_imu, LSM9DS1_LP_ULTRA_LIGHT);
   lsm9ds1_gy_filter_hp_bandwidth_set(&dev_ctx_imu, LSM9DS1_HP_MEDIUM);
   lsm9ds1_gy_filter_out_path_set(&dev_ctx_imu, LSM9DS1_LPF1_HPF_LPF2_OUT);
-
-  lsm9ds1_fifo_mode_set(&dev_ctx_imu, LSM9DS1_STREAM_MODE);
-
   /* Set Output Data Rate / Power mode */
   lsm9ds1_imu_data_rate_set(&dev_ctx_imu, LSM9DS1_IMU_119Hz);
-
   NRF_LOG_INFO("IMU sensors configured");
 
-  uint32_t fifo_count = 0;
-  uint8_t fifo_clear_buffer[double_sample_size];
+  uint16_t fifo_count = 0;
+  uint8_t fifo_clear_buffer[sample_size * 6];
   uint8_t imu_fifo_count = 0;
   float out[1200];
 
@@ -308,18 +358,34 @@ int main(void) {
 
       lsm9ds1_fifo_data_level_get(&dev_ctx_imu, &imu_fifo_count);
       NRF_LOG_INFO("Retrieving samples from IMU FIFO");
-      for (int i = 0; i < imu_fifo_count; i++) {
+      for (uint8_t i = 0; i < imu_fifo_count; i++) {
         lsm9ds1_acceleration_raw_get(&dev_ctx_imu, data_raw_acceleration.u8bit);
         lsm9ds1_angular_rate_raw_get(&dev_ctx_imu, data_raw_angular_rate.u8bit);
 
-        err_code = app_fifo_write(&feature_fifo,
-                                  (uint8_t *)data_raw_acceleration.i16bit,
-                                  &sample_size);
+        err_code = app_fifo_write(
+            &xl_x_fifo, (uint8_t *)(&(data_raw_acceleration.i16bit[0])),
+            &sample_size);
+        APP_ERROR_CHECK(err_code);
+        err_code = app_fifo_write(
+            &xl_y_fifo, (uint8_t *)(&(data_raw_acceleration.i16bit[1])),
+            &sample_size);
+        APP_ERROR_CHECK(err_code);
+        err_code = app_fifo_write(
+            &xl_z_fifo, (uint8_t *)(&(data_raw_acceleration.i16bit[2])),
+            &sample_size);
         APP_ERROR_CHECK(err_code);
 
-        err_code = app_fifo_write(&feature_fifo,
-                                  (uint8_t *)data_raw_angular_rate.i16bit,
-                                  &sample_size);
+        err_code = app_fifo_write(
+            &g_x_fifo, (uint8_t *)(&(data_raw_angular_rate.i16bit[0])),
+            &sample_size);
+        APP_ERROR_CHECK(err_code);
+        err_code = app_fifo_write(
+            &g_y_fifo, (uint8_t *)(&(data_raw_angular_rate.i16bit[1])),
+            &sample_size);
+        APP_ERROR_CHECK(err_code);
+        err_code = app_fifo_write(
+            &g_z_fifo, (uint8_t *)(&(data_raw_angular_rate.i16bit[2])),
+            &sample_size);
         APP_ERROR_CHECK(err_code);
 
         // NRF_LOG_INFO("Acceleration: %x%x, %x%x, %x%x",
@@ -329,12 +395,21 @@ int main(void) {
       }
       NRF_LOG_INFO("Retrieved %d samples from IMU FIFO", imu_fifo_count);
 
-      err_code = app_fifo_read(&feature_fifo, NULL, &fifo_count);
+      err_code = app_fifo_read(&xl_x_fifo, NULL, &fifo_count);
       APP_ERROR_CHECK(err_code);
 
       if (fifo_count >= FIFO_BUFFER_SIZE) {
-        err_code = app_fifo_read(&feature_fifo, &fifo_clear_buffer,
-                                 &double_sample_size);
+        err_code = app_fifo_read(&xl_x_fifo, &fifo_clear_buffer, &sample_size);
+        APP_ERROR_CHECK(err_code);
+        err_code = app_fifo_read(&xl_y_fifo, &fifo_clear_buffer, &sample_size);
+        APP_ERROR_CHECK(err_code);
+        err_code = app_fifo_read(&xl_z_fifo, &fifo_clear_buffer, &sample_size);
+        APP_ERROR_CHECK(err_code);
+        err_code = app_fifo_read(&g_x_fifo, &fifo_clear_buffer, &sample_size);
+        APP_ERROR_CHECK(err_code);
+        err_code = app_fifo_read(&g_y_fifo, &fifo_clear_buffer, &sample_size);
+        APP_ERROR_CHECK(err_code);
+        err_code = app_fifo_read(&g_z_fifo, &fifo_clear_buffer, &sample_size);
         APP_ERROR_CHECK(err_code);
 
         get_feature_data(0, 1200, out);
