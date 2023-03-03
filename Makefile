@@ -15,7 +15,8 @@ SRC_FILES += \
   $(EI_DIR)/edge-impulse-sdk/porting/ei_classifier_porting.cpp \
   $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/c/common.c \
   $(PROJ_DIR)/ant/ant_master.c \
-  $(PROJ_DIR)/drivers/lsm9ds1/lsm9ds1_reg.c \
+	$(PROJ_DIR)/libraries/feature_fifo/feature_fifo.c \
+  $(PROJ_DIR)/libraries/lsm9ds1/lsm9ds1_reg.c \
   $(PROJ_DIR)/main.c \
   $(SDK_ROOT)/components/ant/ant_channel_config/ant_channel_config.c \
   $(SDK_ROOT)/components/boards/boards.c \
@@ -92,7 +93,8 @@ INC_FOLDERS += \
 	$(EI_DIR) \
   $(PROJ_DIR)/ant \
   $(PROJ_DIR)/config \
-  $(PROJ_DIR)/drivers/lsm9ds1 \
+	$(PROJ_DIR)/libraries/feature_fifo \
+  $(PROJ_DIR)/libraries/lsm9ds1 \
   $(SDK_ROOT)/components \
   $(SDK_ROOT)/components/ant/ant_channel_config \
   $(SDK_ROOT)/components/boards \
