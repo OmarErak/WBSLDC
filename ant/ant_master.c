@@ -87,7 +87,7 @@ static uint8_t
                                               // (Broadcast/Acknowledged)
                                               // transmit buffer.
 
-static uint8_t labels[4][9] = {{0xF, 0xB, 0x4, 0x0, 0x12, 0x4, 63, 63, 63},
+static uint8_t labels[4][9] = {{0x0F, 0x0B, 0x4, 0x0, 0x12, 0x4, 63, 63, 63},
                                {0x13, 0x7, 0x0, 0xD, 0xA, 0x14, 63, 63, 63},
                                {0x18, 0x4, 0x12, 63, 63, 63, 63, 63, 63}};
 
@@ -140,27 +140,30 @@ static void increment_sequence_number(void) {
 }
 
 static void populate_characters(uint8_t index) {
-  m_tx_buffer[0] |= (labels[index][0] & CHARACTER_BYTE_MASK) << 6;
-  m_tx_buffer[1] |= (labels[index][0] & CHARACTER_BYTE_MASK) >> 2;
-  m_tx_buffer[1] |= (labels[index][1] & CHARACTER_BYTE_MASK) << 4;
-  m_tx_buffer[2] |= (labels[index][1] & CHARACTER_BYTE_MASK) >> 4;
-  m_tx_buffer[2] |= (labels[index][2] & CHARACTER_BYTE_MASK) << 2;
-  m_tx_buffer[3] |= labels[index][3] & CHARACTER_BYTE_MASK;
-  m_tx_buffer[3] |= (labels[index][4] & CHARACTER_BYTE_MASK) << 6;
-  m_tx_buffer[4] |= (labels[index][4] & CHARACTER_BYTE_MASK) >> 2;
-  m_tx_buffer[4] |= (labels[index][5] & CHARACTER_BYTE_MASK) << 4;
-  m_tx_buffer[5] |= (labels[index][5] & CHARACTER_BYTE_MASK) >> 4;
-  m_tx_buffer[5] |= (labels[index][6] & CHARACTER_BYTE_MASK) << 2;
+  m_tx_buffer[0] |= ((labels[index][0] & CHARACTER_BYTE_MASK) << 6) & 0xFF;
+  m_tx_buffer[1] |= ((labels[index][0] & CHARACTER_BYTE_MASK) >> 2) & 0xFF;
+  m_tx_buffer[1] |= ((labels[index][1] & CHARACTER_BYTE_MASK) << 4) & 0xFF;
+  m_tx_buffer[2] |= ((labels[index][1] & CHARACTER_BYTE_MASK) >> 4) & 0xFF;
+  m_tx_buffer[2] |= ((labels[index][2] & CHARACTER_BYTE_MASK) << 2) & 0xFF;
+  m_tx_buffer[3] |= (labels[index][3] & CHARACTER_BYTE_MASK) & 0xFF;
+  m_tx_buffer[3] |= ((labels[index][4] & CHARACTER_BYTE_MASK) << 6) & 0xFF;
+  m_tx_buffer[4] |= ((labels[index][4] & CHARACTER_BYTE_MASK) >> 2) & 0xFF;
+  m_tx_buffer[4] |= ((labels[index][5] & CHARACTER_BYTE_MASK) << 4) & 0xFF;
+  m_tx_buffer[5] |= ((labels[index][5] & CHARACTER_BYTE_MASK) >> 4) & 0xFF;
+  m_tx_buffer[5] |= ((labels[index][6] & CHARACTER_BYTE_MASK) << 2) & 0xFF;
   m_tx_buffer[6] |= labels[index][7] & CHARACTER_BYTE_MASK;
-  m_tx_buffer[6] |= (labels[index][8] & CHARACTER_BYTE_MASK) << 6;
+  m_tx_buffer[6] |= ((labels[index][8] & CHARACTER_BYTE_MASK) << 6) & 0xFF;
   m_tx_buffer[7] = 0;
-  m_tx_buffer[7] |= (labels[index][8] & CHARACTER_BYTE_MASK) >> 2;
+  m_tx_buffer[7] |= ((labels[index][8] & CHARACTER_BYTE_MASK) >> 2) & 0xFF;
+  m_tx_buffer[7] |= index << 4;
 }
 
 void send_translation(uint8_t index) {
   if (index == m_prev_index) {
     return;
   }
+
+  memset(m_tx_buffer, 0, BROADCAST_DATA_BUFFER_SIZE);
 
   m_prev_index = index;
 
