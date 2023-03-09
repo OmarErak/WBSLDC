@@ -75,7 +75,7 @@
 
 // <o> CHAN_PERIOD - Channel Period (in 32 kHz counts).
 #ifndef CHAN_PERIOD
-#define CHAN_PERIOD 8192
+#define CHAN_PERIOD 4096
 #endif
 
 // <o> RF_FREQ - RF Frequency.
@@ -1157,6 +1157,12 @@
 // <h> nRF_Libraries
 
 //==========================================================
+// <q> APP_FIFO_ENABLED  - app_fifo - Software FIFO implementation
+
+#ifndef APP_FIFO_ENABLED
+#define APP_FIFO_ENABLED 1
+#endif
+
 // <e> APP_SCHEDULER_ENABLED - app_scheduler - Events scheduler
 //==========================================================
 #ifndef APP_SCHEDULER_ENABLED
@@ -1274,6 +1280,178 @@
 #ifndef HARDFAULT_HANDLER_ENABLED
 #define HARDFAULT_HANDLER_ENABLED 1
 #endif
+
+// <e> MEM_MANAGER_ENABLED - mem_manager - Dynamic memory allocator
+//==========================================================
+#ifndef MEM_MANAGER_ENABLED
+#define MEM_MANAGER_ENABLED 1
+#endif
+// <o> MEMORY_MANAGER_SMALL_BLOCK_COUNT - Size of each memory blocks identified
+// as 'small' block.  <0-255>
+
+#ifndef MEMORY_MANAGER_SMALL_BLOCK_COUNT
+#define MEMORY_MANAGER_SMALL_BLOCK_COUNT 1
+#endif
+
+// <o> MEMORY_MANAGER_SMALL_BLOCK_SIZE -  Size of each memory blocks identified
+// as 'small' block. <i>  Size of each memory blocks identified as 'small'
+// block. Memory block are recommended to be word-sized.
+
+#ifndef MEMORY_MANAGER_SMALL_BLOCK_SIZE
+#define MEMORY_MANAGER_SMALL_BLOCK_SIZE 32
+#endif
+
+// <o> MEMORY_MANAGER_MEDIUM_BLOCK_COUNT - Size of each memory blocks identified
+// as 'medium' block.  <0-255>
+
+#ifndef MEMORY_MANAGER_MEDIUM_BLOCK_COUNT
+#define MEMORY_MANAGER_MEDIUM_BLOCK_COUNT 0
+#endif
+
+// <o> MEMORY_MANAGER_MEDIUM_BLOCK_SIZE -  Size of each memory blocks identified
+// as 'medium' block. <i>  Size of each memory blocks identified as 'medium'
+// block. Memory block are recommended to be word-sized.
+
+#ifndef MEMORY_MANAGER_MEDIUM_BLOCK_SIZE
+#define MEMORY_MANAGER_MEDIUM_BLOCK_SIZE 256
+#endif
+
+// <o> MEMORY_MANAGER_LARGE_BLOCK_COUNT - Size of each memory blocks identified
+// as 'large' block.  <0-255>
+
+#ifndef MEMORY_MANAGER_LARGE_BLOCK_COUNT
+#define MEMORY_MANAGER_LARGE_BLOCK_COUNT 3
+#endif
+
+// <o> MEMORY_MANAGER_LARGE_BLOCK_SIZE -  Size of each memory blocks identified
+// as 'large' block. <i>  Size of each memory blocks identified as 'large'
+// block. Memory block are recommended to be word-sized.
+
+#ifndef MEMORY_MANAGER_LARGE_BLOCK_SIZE
+#define MEMORY_MANAGER_LARGE_BLOCK_SIZE 1280
+#endif
+
+// <o> MEMORY_MANAGER_XLARGE_BLOCK_COUNT - Size of each memory blocks identified
+// as 'extra large' block.  <0-255>
+
+#ifndef MEMORY_MANAGER_XLARGE_BLOCK_COUNT
+#define MEMORY_MANAGER_XLARGE_BLOCK_COUNT 0
+#endif
+
+// <o> MEMORY_MANAGER_XLARGE_BLOCK_SIZE -  Size of each memory blocks identified
+// as 'extra large' block. <i>  Size of each memory blocks identified as 'extra
+// large' block. Memory block are recommended to be word-sized.
+
+#ifndef MEMORY_MANAGER_XLARGE_BLOCK_SIZE
+#define MEMORY_MANAGER_XLARGE_BLOCK_SIZE 1320
+#endif
+
+// <o> MEMORY_MANAGER_XXLARGE_BLOCK_COUNT - Size of each memory blocks
+// identified as 'extra extra large' block.  <0-255>
+
+#ifndef MEMORY_MANAGER_XXLARGE_BLOCK_COUNT
+#define MEMORY_MANAGER_XXLARGE_BLOCK_COUNT 0
+#endif
+
+// <o> MEMORY_MANAGER_XXLARGE_BLOCK_SIZE -  Size of each memory blocks
+// identified as 'extra extra large' block. <i>  Size of each memory blocks
+// identified as 'extra extra large' block. Memory block are recommended to be
+// word-sized.
+
+#ifndef MEMORY_MANAGER_XXLARGE_BLOCK_SIZE
+#define MEMORY_MANAGER_XXLARGE_BLOCK_SIZE 3444
+#endif
+
+// <o> MEMORY_MANAGER_XSMALL_BLOCK_COUNT - Size of each memory blocks identified
+// as 'extra small' block.  <0-255>
+
+#ifndef MEMORY_MANAGER_XSMALL_BLOCK_COUNT
+#define MEMORY_MANAGER_XSMALL_BLOCK_COUNT 0
+#endif
+
+// <o> MEMORY_MANAGER_XSMALL_BLOCK_SIZE -  Size of each memory blocks identified
+// as 'extra small' block. <i>  Size of each memory blocks identified as 'extra
+// large' block. Memory block are recommended to be word-sized.
+
+#ifndef MEMORY_MANAGER_XSMALL_BLOCK_SIZE
+#define MEMORY_MANAGER_XSMALL_BLOCK_SIZE 64
+#endif
+
+// <o> MEMORY_MANAGER_XXSMALL_BLOCK_COUNT - Size of each memory blocks
+// identified as 'extra extra small' block.  <0-255>
+
+#ifndef MEMORY_MANAGER_XXSMALL_BLOCK_COUNT
+#define MEMORY_MANAGER_XXSMALL_BLOCK_COUNT 0
+#endif
+
+// <o> MEMORY_MANAGER_XXSMALL_BLOCK_SIZE -  Size of each memory blocks
+// identified as 'extra extra small' block. <i>  Size of each memory blocks
+// identified as 'extra extra small' block. Memory block are recommended to be
+// word-sized.
+
+#ifndef MEMORY_MANAGER_XXSMALL_BLOCK_SIZE
+#define MEMORY_MANAGER_XXSMALL_BLOCK_SIZE 32
+#endif
+
+// <e> MEM_MANAGER_CONFIG_LOG_ENABLED - Enables logging in the module.
+//==========================================================
+#ifndef MEM_MANAGER_CONFIG_LOG_ENABLED
+#define MEM_MANAGER_CONFIG_LOG_ENABLED 0
+#endif
+// <o> MEM_MANAGER_CONFIG_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef MEM_MANAGER_CONFIG_LOG_LEVEL
+#define MEM_MANAGER_CONFIG_LOG_LEVEL 3
+#endif
+
+// <o> MEM_MANAGER_CONFIG_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef MEM_MANAGER_CONFIG_INFO_COLOR
+#define MEM_MANAGER_CONFIG_INFO_COLOR 0
+#endif
+
+// <o> MEM_MANAGER_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef MEM_MANAGER_CONFIG_DEBUG_COLOR
+#define MEM_MANAGER_CONFIG_DEBUG_COLOR 0
+#endif
+
+// </e>
+
+// <q> MEM_MANAGER_DISABLE_API_PARAM_CHECK  - Disable API parameter checks in
+// the module.
+
+#ifndef MEM_MANAGER_DISABLE_API_PARAM_CHECK
+#define MEM_MANAGER_DISABLE_API_PARAM_CHECK 0
+#endif
+
+// </e>
 
 // <e> NRF_BALLOC_ENABLED - nrf_balloc - Block allocator module
 //==========================================================
@@ -1530,7 +1708,7 @@
 // <e> NRF_LOG_BACKEND_RTT_ENABLED - nrf_log_backend_rtt - Log RTT backend
 //==========================================================
 #ifndef NRF_LOG_BACKEND_RTT_ENABLED
-#define NRF_LOG_BACKEND_RTT_ENABLED 0
+#define NRF_LOG_BACKEND_RTT_ENABLED 1
 #endif
 // <o> NRF_LOG_BACKEND_RTT_TEMP_BUFFER_SIZE - Size of buffer for partially
 // processed strings. <i> Size of the buffer is a trade-off between RAM usage
@@ -1539,7 +1717,7 @@
 // only the <i> longer one will be fragmented.
 
 #ifndef NRF_LOG_BACKEND_RTT_TEMP_BUFFER_SIZE
-#define NRF_LOG_BACKEND_RTT_TEMP_BUFFER_SIZE 64
+#define NRF_LOG_BACKEND_RTT_TEMP_BUFFER_SIZE 512
 #endif
 
 // <o> NRF_LOG_BACKEND_RTT_TX_RETRY_DELAY_MS - Period before retrying writing to
@@ -4586,7 +4764,7 @@
 // <i> or this value is actually used. It depends on which one is bigger.
 
 #ifndef SEGGER_RTT_CONFIG_BUFFER_SIZE_UP
-#define SEGGER_RTT_CONFIG_BUFFER_SIZE_UP 512
+#define SEGGER_RTT_CONFIG_BUFFER_SIZE_UP 1024
 #endif
 
 // <o> SEGGER_RTT_CONFIG_MAX_NUM_UP_BUFFERS - Maximum number of upstream

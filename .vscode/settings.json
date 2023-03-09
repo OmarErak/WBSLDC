@@ -6,7 +6,8 @@
       "app_util_platform.h": "c",
       "nrf_drv_twi.h": "c",
       "app_error.h": "c",
-      "arduino_nano_33_ble_sense.h": "c"
+      "arduino_nano_33_ble_sense.h": "c",
+      "ei_classifier_types.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false,
     "cmake.configureOnOpen": false

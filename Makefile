@@ -4,14 +4,19 @@ OUTPUT_DIRECTORY := _build
 
 SDK_ROOT := ./nrfSDK
 PROJ_DIR := ./
+EI_DIR := ./tinyml-model
 
 $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
   LINKER_SCRIPT  := wbsldc_gcc_nrf.ld
 
 # Source files common to all targets
 SRC_FILES += \
+  $(EI_DIR)/edge-impulse-sdk/porting/debug_log.cpp \
+  $(EI_DIR)/edge-impulse-sdk/porting/ei_classifier_porting.cpp \
+  $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/c/common.c \
   $(PROJ_DIR)/ant/ant_master.c \
-  $(PROJ_DIR)/drivers/lsm9ds1/lsm9ds1_reg.c \
+	$(PROJ_DIR)/libraries/feature_fifo/feature_fifo.c \
+  $(PROJ_DIR)/libraries/lsm9ds1/lsm9ds1_reg.c \
   $(PROJ_DIR)/main.c \
   $(SDK_ROOT)/components/ant/ant_channel_config/ant_channel_config.c \
   $(SDK_ROOT)/components/boards/boards.c \
@@ -21,6 +26,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/bsp/bsp.c \
   $(SDK_ROOT)/components/libraries/button/app_button.c \
   $(SDK_ROOT)/components/libraries/experimental_section_vars/nrf_section_iter.c \
+	$(SDK_ROOT)/components/libraries/fifo/app_fifo.c \
   $(SDK_ROOT)/components/libraries/hardfault/hardfault_implementation.c \
   $(SDK_ROOT)/components/libraries/hardfault/nrf52/handler/hardfault_handler_gcc.c \
   $(SDK_ROOT)/components/libraries/log/src/nrf_log_backend_rtt.c \
@@ -29,6 +35,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/log/src/nrf_log_default_backends.c \
   $(SDK_ROOT)/components/libraries/log/src/nrf_log_frontend.c \
   $(SDK_ROOT)/components/libraries/log/src/nrf_log_str_formatter.c \
+  $(SDK_ROOT)/components/libraries/mem_manager/mem_manager.c \
   $(SDK_ROOT)/components/libraries/memobj/nrf_memobj.c \
   $(SDK_ROOT)/components/libraries/pwr_mgmt/nrf_pwr_mgmt.c \
   $(SDK_ROOT)/components/libraries/ringbuf/nrf_ringbuf.c \
@@ -37,6 +44,8 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/strerror/nrf_strerror.c \
   $(SDK_ROOT)/components/libraries/timer/app_timer2.c \
   $(SDK_ROOT)/components/libraries/timer/drv_rtc.c \
+  $(SDK_ROOT)/components/libraries/uart/app_uart_fifo.c \
+  $(SDK_ROOT)/components/libraries/uart/retarget.c \
   $(SDK_ROOT)/components/libraries/util/app_error_handler_gcc.c \
   $(SDK_ROOT)/components/libraries/util/app_error_weak.c \
   $(SDK_ROOT)/components/libraries/util/app_error.c \
@@ -61,12 +70,31 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
   $(SDK_ROOT)/modules/nrfx/soc/nrfx_atomic.c \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/classifier/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/BasicMathFunctions/*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/CommonTables/*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/FastMathFunctions/*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/StatisticsFunctions/*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*bit*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*fft*.c) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/dsp/dct/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/dsp/kissfft/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/dsp/memory.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/core/api/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/kernels/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/micro/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cpp) \
+  $(wildcard $(EI_DIR)/edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cpp) \
+  $(wildcard $(EI_DIR)/tflite-model/*.cpp) \
 
 # Include folders common to all targets
 INC_FOLDERS += \
+	$(EI_DIR) \
   $(PROJ_DIR)/ant \
   $(PROJ_DIR)/config \
-  $(PROJ_DIR)/drivers/lsm9ds1 \
+	$(PROJ_DIR)/libraries/feature_fifo \
+  $(PROJ_DIR)/libraries/lsm9ds1 \
   $(SDK_ROOT)/components \
   $(SDK_ROOT)/components/ant/ant_channel_config \
   $(SDK_ROOT)/components/boards \
@@ -77,10 +105,12 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/button \
   $(SDK_ROOT)/components/libraries/delay \
   $(SDK_ROOT)/components/libraries/experimental_section_vars \
+	$(SDK_ROOT)/components/libraries/fifo \
   $(SDK_ROOT)/components/libraries/hardfault \
   $(SDK_ROOT)/components/libraries/hardfault/nrf52 \
   $(SDK_ROOT)/components/libraries/log \
   $(SDK_ROOT)/components/libraries/log/src \
+  $(SDK_ROOT)/components/libraries/mem_manager \
   $(SDK_ROOT)/components/libraries/memobj \
   $(SDK_ROOT)/components/libraries/mutex \
   $(SDK_ROOT)/components/libraries/pwr_mgmt \
@@ -89,6 +119,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/sortlist \
   $(SDK_ROOT)/components/libraries/strerror \
   $(SDK_ROOT)/components/libraries/timer \
+  $(SDK_ROOT)/components/libraries/uart \
   $(SDK_ROOT)/components/libraries/util \
   $(SDK_ROOT)/components/softdevice/common \
   $(SDK_ROOT)/components/softdevice/s340/headers \
@@ -117,14 +148,19 @@ CFLAGS += -DAPP_TIMER_V2
 CFLAGS += -DAPP_TIMER_V2_RTC1_ENABLED
 CFLAGS += -DBOARD_ARDUINO_NANO_33_SENSE
 CFLAGS += -DCONFIG_GPIO_AS_PINRESET
+CFLAGS += -DEI_C_LINKAGE=1
+CFLAGS += -DEI_CLASSIFIER_TFLITE_ENABLE_CMSIS_NN=0
+CFLAGS += -DEIDSP_SIGNAL_C_FN_POINTER=1
+CFLAGS += -DEIDSP_USE_CMSIS_DSP=0
 CFLAGS += -DFLOAT_ABI_HARD
-CFLAGS += -DNRF52840_XXAA
 CFLAGS += -DNRF_SD_BLE_API_VERSION=6
+CFLAGS += -DNRF52840_XXAA
 CFLAGS += -DS340
 CFLAGS += -DSOFTDEVICE_PRESENT
+CFLAGS += -DTF_LITE_DISABLE_X86_NEON=1
 CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs
-CFLAGS += -Wall -Werror
+CFLAGS += -Wall # -Werror
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # keep every function in a separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
@@ -164,7 +200,7 @@ nrf52840_xxaa: ASMFLAGS += -D__STACK_SIZE=8192
 
 # Add standard libraries at the very end of the linker input, after all objects
 # that may need symbols provided by these libraries.
-LIB_FILES += -lc -lnosys -lm
+LIB_FILES += -lc -lnosys -lm -lstdc++
 
 
 .PHONY: default help
@@ -191,7 +227,7 @@ $(foreach target, $(TARGETS), $(call define_target, $(target)))
 # Flash the program
 flash: default
 	@echo Flashing: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
-	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --sectorerase
+	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --sectorerase --verify
 	nrfjprog -f nrf52 --reset
 
 erase:
