@@ -133,7 +133,7 @@ static EI_IMPULSE_ERROR inference_tflite_run(
     ei_printf("Predictions (time: %d ms.):\n", result->timing.classification);
   }
 
-  EI_IMPULSE_ERROR fill_res = fill_result_struct_from_output_tensor_micro(
+  EI_IMPULSE_ERROR fill_res = fill_result_struct_from_output_tensor_tflite(
       impulse, output, labels_tensor, scores_tensor, result, debug);
 
   impulse->model_reset(ei_aligned_free);
@@ -282,7 +282,8 @@ EI_IMPULSE_ERROR run_nn_inference_image_quantized(const ei_impulse_t* impulse,
     return init_res;
   }
 
-  if (input->type != TfLiteType::kTfLiteInt8) {
+  if (input->type != TfLiteType::kTfLiteInt8 &&
+      input->type != TfLiteType::kTfLiteUInt8) {
     return EI_IMPULSE_ONLY_SUPPORTED_FOR_IMAGES;
   }
 

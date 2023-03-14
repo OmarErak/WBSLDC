@@ -33,7 +33,12 @@
 extern "C" void infer(const void *impulse_arg, uint32_t *time,
                       uint32_t *cycles);
 int8_t *processed_features;
-int8_t infer_result[EI_CLASSIFIER_MAX_LABELS_COUNT];
+
+#ifdef EI_CLASSIFIER_NN_OUTPUT_COUNT
+int8_t infer_result[EI_CLASSIFIER_NN_OUTPUT_COUNT];
+#else
+int8_t infer_result[EI_CLASSIFIER_LABEL_COUNT];
+#endif
 
 extern "C" void get_data(const void *impulse_arg, int8_t *in_buf_0,
                          uint16_t in_buf_0_dim_0, uint16_t in_buf_0_dim_1,
@@ -50,7 +55,12 @@ extern "C" void get_data(const void *impulse_arg, int8_t *in_buf_0,
 extern "C" void post_process(const void *impulse_arg, int8_t *out_buf_0,
                              int8_t *out_buf_1) {
   ei_impulse_t *impulse = (ei_impulse_t *)impulse_arg;
+
+#ifdef EI_CLASSIFIER_NN_OUTPUT_COUNT
+  memcpy(infer_result, out_buf_0, impulse->tflite_output_features_count);
+#else
   memcpy(infer_result, out_buf_0, impulse->label_count);
+#endif
 }
 
 /**
@@ -154,26 +164,46 @@ EI_IMPULSE_ERROR run_nn_inference_image_quantized(const ei_impulse_t *impulse,
 
   // Inference results returned by post_process() and copied into infer_results
 
+  EI_IMPULSE_ERROR fill_res = EI_IMPULSE_OK;
+
+  if (impulse->object_detection) {
+    switch (impulse->object_detection_last_layer) {
+      case EI_CLASSIFIER_LAST_LAYER_FOMO: {
+#if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
+        fill_res = fill_result_struct_i8_fomo(
+            impulse, result, infer_result, impulse->tflite_output_zeropoint,
+            impulse->tflite_output_scale, impulse->fomo_output_size,
+            impulse->fomo_output_size);
+#else
+        ei_printf("ERR: TensaiFlow does not support float32 inference\n");
+        return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+#endif
+        break;
+      }
+      default: {
+        ei_printf("ERR: Unsupported object detection last layer (%d)\n",
+                  impulse->object_detection_last_layer);
+        return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+      }
+    }
+  } else {
+#if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
+    fill_res = fill_result_struct_i8(impulse, result, infer_result,
+                                     impulse->tflite_output_zeropoint,
+                                     impulse->tflite_output_scale, debug);
+#else
+    ei_printf("ERR: TensaiFlow does not support float32 inference\n");
+    return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+#endif
+  }
+
+  if (fill_res != EI_IMPULSE_OK) {
+    return fill_res;
+  }
+
   result->timing.classification_us = ei_read_timer_us() - ctx_start_us;
   result->timing.classification =
       (int)(result->timing.classification_us / 1000);
-
-  for (uint32_t ix = 0; ix < impulse->label_count; ix++) {
-    float value;
-    // Dequantize the output if it is int8
-    value = static_cast<float>(infer_result[ix] -
-                               impulse->tflite_output_zeropoint) *
-            impulse->tflite_output_scale;
-
-    if (debug) {
-      ei_printf("%s:\t", ei_classifier_inferencing_categories[ix]);
-      ei_printf_float(value);
-      ei_printf("\n");
-    }
-    result->classification[ix].label = ei_classifier_inferencing_categories[ix];
-    result->classification[ix].value = value;
-  }
-
   return EI_IMPULSE_OK;
 }
 

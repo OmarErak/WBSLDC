@@ -307,11 +307,7 @@ EI_IMPULSE_ERROR fill_output_matrix_from_tensor(TfLiteTensor *output,
   return EI_IMPULSE_OK;
 }
 
-#endif  // #if (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE_FULL)
-        // || (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE)
-
-#if EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE
-EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_micro(
+EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_tflite(
     const ei_impulse_t *impulse, TfLiteTensor *output,
     TfLiteTensor *labels_tensor, TfLiteTensor *scores_tensor,
     ei_impulse_result_t *result, bool debug) {
@@ -333,6 +329,26 @@ EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_micro(
         }
         break;
       }
+#if EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE_FULL
+      case EI_CLASSIFIER_LAST_LAYER_SSD: {
+        if (!scores_tensor->data.f) {
+          return EI_IMPULSE_SCORE_TENSOR_WAS_NULL;
+        }
+        if (!labels_tensor->data.f) {
+          return EI_IMPULSE_LABEL_TENSOR_WAS_NULL;
+        }
+        if (output->type == kTfLiteFloat32) {
+          fill_res = fill_result_struct_f32_object_detection(
+              impulse, result, output->data.f, scores_tensor->data.f,
+              labels_tensor->data.f, debug);
+        } else {
+          ei_printf(
+              "ERR: MobileNet SSD does not support quantized inference\n");
+          return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+        }
+        break;
+      }
+#else
       case EI_CLASSIFIER_LAST_LAYER_SSD: {
 #if EI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP
         fill_res = fill_result_struct_f32_object_detection(
@@ -347,20 +363,59 @@ EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_micro(
 
         break;
       }
+#endif  // EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE_FULL
       case EI_CLASSIFIER_LAST_LAYER_YOLOV5:
       case EI_CLASSIFIER_LAST_LAYER_YOLOV5_V5_DRPAI: {
-        ei_printf(
-            "ERR: YOLOv5 models are not supported using EON Compiler, use full "
-            "TFLite (%d)\n",
-            impulse->object_detection_last_layer);
-        return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+        int version = impulse->object_detection_last_layer ==
+                              EI_CLASSIFIER_LAST_LAYER_YOLOV5_V5_DRPAI
+                          ? 5
+                          : 6;
+
+        if (output->type == kTfLiteInt8) {
+          fill_res = fill_result_struct_quantized_yolov5(
+              impulse, result, version, output->data.int8,
+              output->params.zero_point, output->params.scale,
+              impulse->tflite_output_features_count);
+        } else if (output->type == kTfLiteUInt8) {
+          fill_res = fill_result_struct_quantized_yolov5(
+              impulse, result, version, output->data.uint8,
+              output->params.zero_point, output->params.scale,
+              impulse->tflite_output_features_count);
+        } else if (output->type == kTfLiteFloat32) {
+          fill_res = fill_result_struct_f32_yolov5(
+              impulse, result, version, output->data.f,
+              impulse->tflite_output_features_count);
+        } else {
+          ei_printf("ERR: Invalid output type (%d) for YOLOv5 last layer\n",
+                    output->type);
+          return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+        }
+        break;
       }
       case EI_CLASSIFIER_LAST_LAYER_YOLOX: {
-        ei_printf(
-            "ERR: YOLOX models are not supported using EON Compiler, use full "
-            "TFLite (%d)\n",
-            impulse->object_detection_last_layer);
+#if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
+        ei_printf("ERR: YOLOX does not support quantized inference\n");
         return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+#else
+        fill_res =
+            fill_result_struct_f32_yolox(impulse, result, output->data.f,
+                                         impulse->tflite_output_features_count);
+#endif
+        break;
+      }
+      case EI_CLASSIFIER_LAST_LAYER_YOLOV7: {
+#if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
+        ei_printf("ERR: YOLOV7 does not support quantized inference\n");
+        return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+#else
+        size_t output_feature_count = 1;
+        for (int ix = 0; ix < output->dims->size; ix++) {
+          output_feature_count *= output->dims->data[ix];
+        }
+        fill_res = fill_result_struct_f32_yolov7(
+            impulse, result, output->data.f, output_feature_count);
+#endif
+        break;
       }
       default: {
         ei_printf("ERR: Unsupported object detection last layer (%d)\n",
@@ -381,6 +436,7 @@ EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_micro(
 
   return fill_res;
 }
-#endif  // #if EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE
+#endif  // #if (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE_FULL)
+        // || (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE)
 
 #endif  // _EI_CLASSIFIER_INFERENCING_ENGINE_TFLITE_HELPER_H_

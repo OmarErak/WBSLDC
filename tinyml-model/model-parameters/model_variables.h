@@ -27,8 +27,8 @@
 #include "edge-impulse-sdk/classifier/ei_model_types.h"
 #include "model_metadata.h"
 
-const char* ei_classifier_inferencing_categories[] = {"Please", "Thank you",
-                                                      "Yes"};
+const char* ei_classifier_inferencing_categories[] = {"Idle", "Please",
+                                                      "ThankYou", "Yes"};
 
 uint8_t ei_dsp_config_3_axes[] = {0, 1, 2, 3, 4, 5};
 const uint32_t ei_dsp_config_3_axes_size = 6;
@@ -37,18 +37,20 @@ ei_dsp_config_spectral_analysis_t ei_dsp_config_3 = {
     2,                          // int implementationVersion
     6,                          // int length of axes
     1.0f,                       // float scale-axes
-    "low",                      // select filter-type
+    1,                          // int input-decimation-ratio
+    "none",                     // select filter-type
     3.0f,                       // float filter-cutoff
     6,                          // int filter-order
     "FFT",                      // select analysis-type
-    128,                        // int fft-length
+    16,                         // int fft-length
     3,                          // int spectral-peaks-count
     0.1f,                       // float spectral-peaks-threshold
     "0.1, 0.5, 1.0, 2.0, 5.0",  // string spectral-power-edges
     true,                       // boolean do-log
     true,                       // boolean do-fft-overlap
     4,                          // int wavelet-level
-    "db4"                       // select wavelet
+    "db4",                      // select wavelet
+    false                       // boolean extra-low-freq
 };
 
 #define EI_DSP_PARAMS_GENERATED 1

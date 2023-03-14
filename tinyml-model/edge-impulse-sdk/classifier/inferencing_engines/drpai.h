@@ -628,8 +628,8 @@ EI_IMPULSE_ERROR run_nn_inference_image_quantized(const ei_impulse_t *impulse,
       proc[DRPAI_INDEX_INPUT].size, 3, signal->total_length,
       3 * signal->total_length);
   // Creates a features matrix mapped to the DRP-AI UDMA input region
-  ei::matrix_i8_t features_matrix(1, proc[DRPAI_INDEX_INPUT].size,
-                                  (int8_t *)drpai_input_buf);
+  ei::matrix_u8_t features_matrix(1, proc[DRPAI_INDEX_INPUT].size,
+                                  drpai_input_buf);
 
   // Grabs the raw image buffer from the signal, DRP-AI will automatically
   // extract features

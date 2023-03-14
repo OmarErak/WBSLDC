@@ -36,7 +36,7 @@ int extract_tflite_features(signal_t *signal, matrix_t *output_matrix,
 const size_t ei_dsp_blocks_size = 1;
 ei_model_dsp_t ei_dsp_blocks[ei_dsp_blocks_size] = {
     {// DSP block 3
-     42, &extract_spectral_analysis_features, (void *)&ei_dsp_config_3,
+     66, &extract_spectral_analysis_features, (void *)&ei_dsp_config_3,
      ei_dsp_config_3_axes, ei_dsp_config_3_axes_size}};
 
 #endif  // _EI_CLASSIFIER_DSP_BLOCKS_H_

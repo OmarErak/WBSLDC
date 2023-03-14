@@ -1,11 +1,11 @@
 #include "feature_fifo.h"
 
-static float feature_buffer[1200];
+static float feature_buffer[FIFO_BUFFER_SIZE];
 static uint16_t fifo_index = 0;
 
 void feature_fifo_push(float* feature) {
-  if (fifo_index + 6 > 1200) {
-    for (uint16_t i = 6; i < 1200; i++) {
+  if (fifo_index + 6 > FIFO_BUFFER_SIZE) {
+    for (uint16_t i = 6; i < FIFO_BUFFER_SIZE; i++) {
       feature_buffer[i - 6] = feature_buffer[i];
     }
     fifo_index -= 6;

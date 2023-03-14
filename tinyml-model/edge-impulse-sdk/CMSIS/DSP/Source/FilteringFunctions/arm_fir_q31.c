@@ -864,7 +864,7 @@ void arm_fir_q31(const arm_fir_instance_q31 *S, const q31_t *pSrc, q31_t *pDst,
 #if defined(ARM_MATH_LOOPUNROLL)
   q63_t acc1, acc2;           /* Accumulators */
   q31_t x0, x1, x2;           /* Temporary variables to hold state values */
-  q31_t c0; /* Temporary variable to hold coefficient value */
+  q31_t c0;                   /* Temporary variable to hold coefficient value */
 #endif
 
   /* S->pState points to state array which contains previous frame (numTaps - 1)

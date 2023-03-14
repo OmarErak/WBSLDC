@@ -47,6 +47,9 @@
 #define EI_CLASSIFIER_TFLITE_OUTPUT_DATA_TENSOR 0
 #endif  // not defined EI_CLASSIFIER_TFLITE_OUTPUT_DATA_TENSOR
 
+#include "tflite-model/tidl-model.h"
+#include "utils/model_header_utils.h"
+
 void *in_ptrs[16] = {NULL};
 void *out_ptrs[16] = {NULL};
 
@@ -60,8 +63,17 @@ extern "C" EI_IMPULSE_ERROR run_nn_inference(const ei_impulse_t *impulse,
   static std::vector<int> outputs;
 
   if (!model) {
-    model =
-        tflite::FlatBufferModel::BuildFromFile("tflite-model/trained.tflite");
+    std::string proj_artifacts_path =
+        "/tmp/" + std::string(impulse->project_name) + "-" +
+        std::to_string(impulse->project_id) + "-" +
+        std::to_string(impulse->deploy_version);
+
+    create_project_if_not_exists(proj_artifacts_path, model_h_files,
+                                 model_h_files_len);
+
+    std::string proj_model_path = proj_artifacts_path + "/trained.tflite";
+
+    model = tflite::FlatBufferModel::BuildFromFile(proj_model_path.c_str());
     if (!model) {
       ei_printf("Failed to build TFLite model from buffer\n");
       return EI_IMPULSE_TFLITE_ERROR;
@@ -83,7 +95,8 @@ extern "C" EI_IMPULSE_ERROR run_nn_inference(const ei_impulse_t *impulse,
     tflite_plugin_create_delegate tflite_plugin_dlg_create;
     char *keys[] = {(char *)"artifacts_folder", (char *)"num_tidl_subgraphs",
                     (char *)"debug_level"};
-    char *values[] = {(char *)"tflite-model", (char *)"16", (char *)"0"};
+    char *values[] = {(char *)proj_artifacts_path.c_str(), (char *)"16",
+                      (char *)"0"};
     void *lib = dlopen("libtidl_tfl_delegate.so", RTLD_NOW);
     assert(lib);
     tflite_plugin_dlg_create = (tflite_plugin_create_delegate)dlsym(
@@ -183,6 +196,34 @@ extern "C" EI_IMPULSE_ERROR run_nn_inference(const ei_impulse_t *impulse,
       impulse->tflite_output_data_tensor);
 #endif
 
+  if (debug) {
+    ei_printf("LOG_INFO tensors size: %ld \n", interpreter->tensors_size());
+    ei_printf("LOG_INFO nodes size: %ld\n", interpreter->nodes_size());
+    ei_printf("LOG_INFO number of inputs: %ld\n", inputs.size());
+    ei_printf("LOG_INFO number of outputs: %ld\n", outputs.size());
+    ei_printf("LOG_INFO input(0) name: %s\n", interpreter->GetInputName(0));
+
+    int t_size = interpreter->tensors_size();
+    for (int i = 0; i < t_size; i++) {
+      if (interpreter->tensor(i)->name) {
+        ei_printf("LOG_INFO %d: %s,%ld,%d,%f,%d,size(", i,
+                  interpreter->tensor(i)->name, interpreter->tensor(i)->bytes,
+                  interpreter->tensor(i)->type,
+                  interpreter->tensor(i)->params.scale,
+                  interpreter->tensor(i)->params.zero_point);
+
+        for (int k = 0; k < interpreter->tensor(i)->dims->size; k++) {
+          if (k == interpreter->tensor(i)->dims->size - 1) {
+            ei_printf("%d", interpreter->tensor(i)->dims->data[k]);
+          } else {
+            ei_printf("%d,", interpreter->tensor(i)->dims->data[k]);
+          }
+        }
+        ei_printf(")\n");
+      }
+    }
+  }
+
   if (!out_data) {
     return EI_IMPULSE_OUTPUT_TENSOR_WAS_NULL;
   }
@@ -251,6 +292,21 @@ extern "C" EI_IMPULSE_ERROR run_nn_inference(const ei_impulse_t *impulse,
 #else
         fill_res = fill_result_struct_f32_yolox(
             impulse, result, out_data, impulse->tflite_output_features_count);
+#endif
+        break;
+      }
+      case EI_CLASSIFIER_LAST_LAYER_YOLOV7: {
+#if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
+        ei_printf("ERR: YOLOV7 does not support quantized inference\n");
+        return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+#else
+        TfLiteTensor *output = interpreter->output_tensor(0);
+        size_t output_feature_count = 1;
+        for (int ix = 0; ix < output->dims->size; ix++) {
+          output_feature_count *= output->dims->data[ix];
+        }
+        fill_res = fill_result_struct_f32_yolov7(
+            impulse, result, output->data.f, output_feature_count);
 #endif
         break;
       }

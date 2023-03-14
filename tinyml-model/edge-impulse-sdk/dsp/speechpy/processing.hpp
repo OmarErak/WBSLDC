@@ -26,7 +26,7 @@ namespace speechpy {
 // one stack frame returned by stack_frames
 typedef struct ei_stack_frames_info {
   signal_t *signal;
-  std::vector<uint32_t> frame_ixs;
+  ei_vector<uint32_t> frame_ixs;
   int frame_length;
 } stack_frames_info_t;
 
@@ -503,6 +503,17 @@ static int mfe_normalization(matrix_t *features_matrix, int noise_floor_db) {
     f += noise;
     f *= noise_scale;
     // clip again
+
+    /* Here is the python code we're duplicating:
+    # Quantize to 8 bits and dequantize back to float32
+    mfe = np.uint8(np.around(mfe * 2**8))
+    # clip to 2**8
+    mfe = np.clip(mfe, 0, 255)
+    mfe = np.float32(mfe / 2**8)
+    */
+
+    f = roundf(f * 256) / 256;
+
     if (f < 0.0f)
       f = 0.0f;
     else if (f > 1.0f)

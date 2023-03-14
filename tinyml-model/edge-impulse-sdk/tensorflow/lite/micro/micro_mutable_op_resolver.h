@@ -143,6 +143,11 @@ class MicroMutableOpResolver : public MicroOpResolver {
                       ParsePool);
   }
 
+  TfLiteStatus AddBatchMatMul() {
+    return AddBuiltin(BuiltinOperator_BATCH_MATMUL,
+                      tflite::Register_BATCH_MATMUL(), ParseBatchMatMul);
+  }
+
   TfLiteStatus AddBatchToSpaceNd() {
     return AddBuiltin(BuiltinOperator_BATCH_TO_SPACE_ND,
                       Register_BATCH_TO_SPACE_ND(), ParseBatchToSpaceNd);
@@ -473,6 +478,11 @@ class MicroMutableOpResolver : public MicroOpResolver {
   TfLiteStatus AddSplitV() {
     return AddBuiltin(BuiltinOperator_SPLIT_V,
                       tflite::ops::micro::Register_SPLIT_V(), ParseSplitV);
+  }
+
+  TfLiteStatus AddSquaredDifference() {
+    return AddBuiltin(BuiltinOperator_SQUARED_DIFFERENCE,
+                      Register_SQUARED_DIFFERENCE(), ParseSquaredDifference);
   }
 
   TfLiteStatus AddSqueeze() {

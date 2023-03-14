@@ -76,6 +76,9 @@ __attribute__((unused)) int extract_spectral_analysis_features(
     if (config->implementation_version == 1) {
       return spectral::feature::extract_spectral_analysis_features_v1(
           &input_matrix, output_matrix, config, frequency);
+    } else if (config->implementation_version == 4) {
+      return spectral::feature::extract_spectral_analysis_features_v4(
+          &input_matrix, output_matrix, config, frequency);
     } else {
       return spectral::feature::extract_spectral_analysis_features_v2(
           &input_matrix, output_matrix, config, frequency);
@@ -104,19 +107,6 @@ __attribute__((unused)) int extract_raw_features(signal_t *signal,
                                                  const float frequency) {
   ei_dsp_config_raw_t config = *((ei_dsp_config_raw_t *)config_ptr);
 
-  // input matrix from the raw signal
-  matrix_t input_matrix(signal->total_length / config.axes, config.axes);
-  if (!input_matrix.buffer) {
-    EIDSP_ERR(EIDSP_OUT_OF_MEM);
-  }
-  signal->get_data(0, signal->total_length, input_matrix.buffer);
-
-  // scale the signal
-  int ret = numpy::scale(&input_matrix, config.scale_axes);
-  if (ret != EIDSP_OK) {
-    EIDSP_ERR(ret);
-  }
-
   // Because of rounding errors during re-sampling the output size of the block
   // might be smaller than the input of the block. Make sure we don't write
   // outside of the bounds of the array:
@@ -126,8 +116,13 @@ __attribute__((unused)) int extract_raw_features(signal_t *signal,
     els_to_copy = output_matrix->rows * output_matrix->cols;
   }
 
-  memcpy(output_matrix->buffer, input_matrix.buffer,
-         els_to_copy * sizeof(float));
+  signal->get_data(0, els_to_copy, output_matrix->buffer);
+
+  // scale the signal
+  int ret = numpy::scale(output_matrix, config.scale_axes);
+  if (ret != EIDSP_OK) {
+    EIDSP_ERR(ret);
+  }
 
   return EIDSP_OK;
 }
@@ -253,7 +248,7 @@ __attribute__((unused)) int extract_mfcc_features(
   }
 
   if ((config.implementation_version == 0) ||
-      (config.implementation_version > 3)) {
+      (config.implementation_version > 4)) {
     EIDSP_ERR(EIDSP_BLOCK_VERSION_INCORRECT);
   }
 
@@ -290,8 +285,7 @@ __attribute__((unused)) int extract_mfcc_features(
   output_matrix->rows = out_matrix_size.rows;
   output_matrix->cols = out_matrix_size.cols;
 
-  // and run the MFCC extraction (using 32 rather than 40 filters here to
-  // optimize speed on embedded)
+  // and run the MFCC extraction
   int ret = speechpy::feature::mfcc(
       output_matrix, &preemphasized_audio_signal, frequency,
       config.frame_length, config.frame_stride, config.num_cepstral,
@@ -590,12 +584,6 @@ __attribute__((unused)) int extract_spectrogram_features(
 
   output_matrix->rows = out_matrix_size.rows;
   output_matrix->cols = out_matrix_size.cols;
-
-  // and run the MFE extraction
-  EI_DSP_MATRIX(energy_matrix, output_matrix->rows, 1);
-  if (!energy_matrix.buffer) {
-    EIDSP_ERR(EIDSP_OUT_OF_MEM);
-  }
 
   int ret = speechpy::feature::spectrogram(
       output_matrix, signal, sampling_frequency, config.frame_length,
@@ -912,20 +900,25 @@ __attribute__((unused)) int extract_mfe_features(
   output_matrix->rows = out_matrix_size.rows;
   output_matrix->cols = out_matrix_size.cols;
 
-  // and run the MFE extraction
-  EI_DSP_MATRIX(energy_matrix, output_matrix->rows, 1);
-  if (!energy_matrix.buffer) {
-    if (preemphasis) {
-      delete preemphasis;
-    }
-    EIDSP_ERR(EIDSP_OUT_OF_MEM);
+  int ret;
+  // This probably seems incorrect, but the mfe func can actually handle all
+  // versions There's a subtle issue with cmvn and v2, not worth tracking down
+  // So for v2 and v1, we'll just use the old code
+  // (the new mfe does away with the intermediate filterbank matrix)
+  if (config.implementation_version > 2) {
+    ret = speechpy::feature::mfe(
+        output_matrix, nullptr, &preemphasized_audio_signal, frequency,
+        config.frame_length, config.frame_stride, config.num_filters,
+        config.fft_length, config.low_frequency, config.high_frequency,
+        config.implementation_version);
+  } else {
+    ret = speechpy::feature::mfe_v3(
+        output_matrix, nullptr, &preemphasized_audio_signal, frequency,
+        config.frame_length, config.frame_stride, config.num_filters,
+        config.fft_length, config.low_frequency, config.high_frequency,
+        config.implementation_version);
   }
 
-  int ret = speechpy::feature::mfe(
-      output_matrix, &energy_matrix, &preemphasized_audio_signal, frequency,
-      config.frame_length, config.frame_stride, config.num_filters,
-      config.fft_length, config.low_frequency, config.high_frequency,
-      config.implementation_version);
   if (preemphasis) {
     delete preemphasis;
   }
@@ -988,18 +981,24 @@ static int extract_mfe_run_slice(signal_t *signal, matrix_t *output_matrix,
   matrix_t output_matrix_slice(out_matrix_size.rows, out_matrix_size.cols,
                                output_matrix->buffer + output_matrix_offset);
 
-  // energy matrix
-  EI_DSP_MATRIX(energy_matrix, out_matrix_size.rows, 1);
-  if (!energy_matrix.buffer) {
-    EIDSP_ERR(EIDSP_OUT_OF_MEM);
-  }
-
   // and run the MFE extraction
-  x = speechpy::feature::mfe(
-      &output_matrix_slice, &energy_matrix, signal, frequency,
-      config->frame_length, config->frame_stride, config->num_filters,
-      config->fft_length, config->low_frequency, config->high_frequency,
-      config->implementation_version);
+  // This probably seems incorrect, but the mfe func can actually handle all
+  // versions There's a subtle issue with cmvn and v2, not worth tracking down
+  // So for v2 and v1, we'll just use the old code
+  // (the new mfe does away with the intermediate filterbank matrix)
+  if (config->implementation_version > 2) {
+    x = speechpy::feature::mfe(&output_matrix_slice, nullptr, signal, frequency,
+                               config->frame_length, config->frame_stride,
+                               config->num_filters, config->fft_length,
+                               config->low_frequency, config->high_frequency,
+                               config->implementation_version);
+  } else {
+    x = speechpy::feature::mfe_v3(
+        &output_matrix_slice, nullptr, signal, frequency, config->frame_length,
+        config->frame_stride, config->num_filters, config->fft_length,
+        config->low_frequency, config->high_frequency,
+        config->implementation_version);
+  }
   if (x != EIDSP_OK) {
     ei_printf("ERR: MFE failed (%d)\n", x);
     EIDSP_ERR(x);
@@ -1312,7 +1311,7 @@ __attribute__((unused)) int extract_image_features(signal_t *signal,
     (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_DRPAI)
 
 __attribute__((unused)) int extract_drpai_features_quantized(
-    signal_t *signal, matrix_i8_t *output_matrix, void *config_ptr,
+    signal_t *signal, matrix_u8_t *output_matrix, void *config_ptr,
     const float frequency) {
   ei_dsp_config_image_t config = *((ei_dsp_config_image_t *)config_ptr);
 
@@ -1345,13 +1344,13 @@ __attribute__((unused)) int extract_drpai_features_quantized(
       uint32_t pixel = static_cast<uint32_t>(input_matrix.buffer[jx]);
 
       if (channel_count == 3) {
-        int32_t r = static_cast<int32_t>(pixel >> 16 & 0xff);
-        int32_t g = static_cast<int32_t>(pixel >> 8 & 0xff);
-        int32_t b = static_cast<int32_t>(pixel & 0xff);
+        uint8_t r = static_cast<uint8_t>(pixel >> 16 & 0xff);
+        uint8_t g = static_cast<uint8_t>(pixel >> 8 & 0xff);
+        uint8_t b = static_cast<uint8_t>(pixel & 0xff);
 
-        output_matrix->buffer[output_ix++] = static_cast<int8_t>(r);
-        output_matrix->buffer[output_ix++] = static_cast<int8_t>(g);
-        output_matrix->buffer[output_ix++] = static_cast<int8_t>(b);
+        output_matrix->buffer[output_ix++] = r;
+        output_matrix->buffer[output_ix++] = g;
+        output_matrix->buffer[output_ix++] = b;
       } else {
         // NOTE: not implementing greyscale yet
       }

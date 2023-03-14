@@ -64,9 +64,6 @@
 /* TWI instance ID. */
 #define TWI_INSTANCE_ID 0
 
-/* FIFO Buffer Size (Model input * 2) */
-#define FIFO_BUFFER_SIZE EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE
-
 /* Private variables ---------------------------------------------------------*/
 static lsm9ds1_id_t whoamI;
 static lsm9ds1_status_t reg;

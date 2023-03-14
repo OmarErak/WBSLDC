@@ -67,6 +67,8 @@
 #include "edge-impulse-sdk/classifier/inferencing_engines/drpai.h"
 #elif EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_AKIDA
 #include "edge-impulse-sdk/classifier/inferencing_engines/akida.h"
+#elif EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_ONNX_TIDL
+#include "edge-impulse-sdk/classifier/inferencing_engines/onnx_tidl.h"
 #elif EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_NONE
 // noop
 #else
@@ -167,9 +169,10 @@ extern "C" EI_IMPULSE_ERROR process_impulse(const ei_impulse_t *impulse,
                                             signal_t *signal,
                                             ei_impulse_result_t *result,
                                             bool debug = false) {
-#if (EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED == 1 &&                       \
-     (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE ||       \
-      EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TENSAIFLOW)) || \
+#if (EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED == 1 &&                      \
+     (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE ||      \
+      EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TENSAIFLOW ||  \
+      EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_ONNX_TIDL)) || \
     EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_DRPAI
   // Shortcut for quantized image models
   if (can_run_classifier_image_quantized(impulse) == EI_IMPULSE_OK) {
@@ -581,7 +584,8 @@ __attribute__((unused)) static EI_IMPULSE_ERROR
 can_run_classifier_image_quantized(const ei_impulse_t *impulse) {
   if (impulse->inferencing_engine != EI_CLASSIFIER_TFLITE &&
       impulse->inferencing_engine != EI_CLASSIFIER_TENSAIFLOW &&
-      impulse->inferencing_engine != EI_CLASSIFIER_DRPAI)  // check later
+      impulse->inferencing_engine != EI_CLASSIFIER_DRPAI &&
+      impulse->inferencing_engine != EI_CLASSIFIER_ONNX_TIDL)  // check later
   {
     return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
   }
@@ -608,12 +612,13 @@ can_run_classifier_image_quantized(const ei_impulse_t *impulse) {
 #if EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED == 1 &&                     \
     (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE ||     \
      EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TENSAIFLOW || \
-     EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_DRPAI)
+     EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_DRPAI ||      \
+     EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_ONNX_TIDL)
 
 /**
  * Special function to run the classifier on images, only works on TFLite models
- * (either interpreter or EON or for tensaiflow) that allocates a lot less
- * memory by quantizing in place. This only works if
+ * (either interpreter, EON, tensaiflow, drpai or tidl) that allocates a lot
+ * less memory by quantizing in place. This only works if
  * 'can_run_classifier_image_quantized' returns EI_IMPULSE_OK.
  */
 extern "C" EI_IMPULSE_ERROR run_classifier_image_quantized(

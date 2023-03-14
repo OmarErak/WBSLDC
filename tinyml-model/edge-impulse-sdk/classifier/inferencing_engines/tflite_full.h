@@ -184,100 +184,17 @@ extern "C" EI_IMPULSE_ERROR run_nn_inference(const ei_impulse_t *impulse,
   result->timing.classification =
       (int)(result->timing.classification_us / 1000);
 
-#if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
-  int8_t *out_data = interpreter->typed_output_tensor<int8_t>(
-      impulse->tflite_output_data_tensor);
-#else
-  float *out_data = interpreter->typed_output_tensor<float>(
-      impulse->tflite_output_data_tensor);
-#endif
-
-  if (!out_data) {
-    return EI_IMPULSE_OUTPUT_TENSOR_WAS_NULL;
-  }
-
   if (debug) {
     ei_printf("Predictions (time: %d ms.):\n", result->timing.classification);
   }
 
-  EI_IMPULSE_ERROR fill_res = EI_IMPULSE_OK;
+  TfLiteTensor *scores_tensor =
+      interpreter->output_tensor(impulse->tflite_output_score_tensor);
+  TfLiteTensor *labels_tensor =
+      interpreter->output_tensor(impulse->tflite_output_labels_tensor);
 
-  if (impulse->object_detection) {
-    switch (impulse->object_detection_last_layer) {
-      case EI_CLASSIFIER_LAST_LAYER_FOMO: {
-#if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
-        fill_res = fill_result_struct_i8_fomo(
-            impulse, result, out_data, impulse->tflite_output_zeropoint,
-            impulse->tflite_output_scale, impulse->fomo_output_size,
-            impulse->fomo_output_size);
-#else
-        fill_res = fill_result_struct_f32_fomo(impulse, result, out_data,
-                                               impulse->fomo_output_size,
-                                               impulse->fomo_output_size);
-#endif
-        break;
-      }
-      case EI_CLASSIFIER_LAST_LAYER_SSD: {
-        float *scores_tensor = interpreter->typed_output_tensor<float>(
-            impulse->tflite_output_score_tensor);
-        float *label_tensor = interpreter->typed_output_tensor<float>(
-            impulse->tflite_output_labels_tensor);
-        if (!scores_tensor) {
-          return EI_IMPULSE_SCORE_TENSOR_WAS_NULL;
-        }
-        if (!label_tensor) {
-          return EI_IMPULSE_LABEL_TENSOR_WAS_NULL;
-        }
-#if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
-        ei_printf("ERR: MobileNet SSD does not support quantized inference\n");
-        return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
-#else
-        fill_res = fill_result_struct_f32_object_detection(
-            impulse, result, out_data, scores_tensor, label_tensor, debug);
-#endif
-        break;
-      }
-      case EI_CLASSIFIER_LAST_LAYER_YOLOV5:
-      case EI_CLASSIFIER_LAST_LAYER_YOLOV5_V5_DRPAI: {
-#if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
-        ei_printf("ERR: YOLOv5 does not support quantized inference\n");
-        return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
-#else
-        int version = impulse->object_detection_last_layer ==
-                              EI_CLASSIFIER_LAST_LAYER_YOLOV5_V5_DRPAI
-                          ? 5
-                          : 6;
-        fill_res = fill_result_struct_f32_yolov5(
-            impulse, result, version, out_data,
-            impulse->tflite_output_features_count);
-#endif
-        break;
-      }
-      case EI_CLASSIFIER_LAST_LAYER_YOLOX: {
-#if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
-        ei_printf("ERR: YOLOX does not support quantized inference\n");
-        return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
-#else
-        fill_res = fill_result_struct_f32_yolox(
-            impulse, result, out_data, impulse->tflite_output_features_count);
-#endif
-        break;
-      }
-      default: {
-        ei_printf("ERR: Unsupported object detection last layer (%d)\n",
-                  impulse->object_detection_last_layer);
-        break;
-      }
-    }
-  } else {
-#if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
-    fill_res = fill_result_struct_i8(impulse, result, out_data,
-                                     output->params.zero_point,
-                                     output->params.scale, debug);
-#else
-    fill_res = fill_result_struct_f32(impulse, result, out_data, debug);
-#endif
-  }
+  EI_IMPULSE_ERROR fill_res = fill_result_struct_from_output_tensor_tflite(
+      impulse, output, labels_tensor, scores_tensor, result, debug);
 
   if (fill_res != EI_IMPULSE_OK) {
     return fill_res;
