@@ -8,7 +8,8 @@
 #include "edge-impulse-sdk/porting/ei_classifier_porting.h"
 
 /* FIFO Buffer Size (Model input * 2) */
-#define FIFO_BUFFER_SIZE EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE
+#define FIFO_BUFFER_CAPACITY EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE
+#define FIFO_BUFFER_SIZE FIFO_BUFFER_CAPACITY * 2
 
 void feature_fifo_push(float* feature);
 void feature_fifo_get(float* buffer, uint16_t length);

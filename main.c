@@ -45,6 +45,7 @@
 
 #include "ant_master.h"
 #include "app_error.h"
+#include "app_timer.h"
 #include "app_util_platform.h"
 #include "boards.h"
 #include "edge-impulse-sdk/classifier/ei_classifier_types.h"
@@ -53,6 +54,7 @@
 #include "feature_fifo.h"
 #include "lsm9ds1_reg.h"
 #include "nrf_delay.h"
+#include "nrf_drv_clock.h"
 #include "nrf_drv_twi.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -64,12 +66,18 @@
 /* TWI instance ID. */
 #define TWI_INSTANCE_ID 0
 
+/* Idle Label Index */
+#define IDLE_LABEL_INDEX 0
+
 /* Private variables ---------------------------------------------------------*/
 static lsm9ds1_id_t whoamI;
 static lsm9ds1_status_t reg;
 static axis3bit16_t data_raw_acceleration;
 static axis3bit16_t data_raw_angular_rate;
-static float feature[6];
+static lsm9ds1_ctx_t dev_ctx_imu;
+static lsm9ds1_ctx_t dev_ctx_mag;
+const uint8_t timer_id;
+static float feature[EI_CLASSIFIER_RAW_SAMPLES_PER_FRAME];
 
 /* TWI instance. */
 static const nrf_drv_twi_t m_twi = NRF_DRV_TWI_INSTANCE(TWI_INSTANCE_ID);
@@ -158,10 +166,34 @@ static void softdevice_setup(void) {
 }
 
 static int get_feature_data(size_t offset, size_t length, float *out_ptr) {
-  float features[length];
-  feature_fifo_get(features, length);
-  memcpy(out_ptr, features, length * sizeof(float));
+  feature_fifo_get(out_ptr, length);
   return 0;
+}
+
+static void timeout_handler(void *p_context) {
+  lsm9ds1_dev_status_get(&dev_ctx_mag, &dev_ctx_imu, &reg);
+  if (reg.status_imu.xlda && reg.status_imu.gda) {
+    memset(data_raw_acceleration.u8bit, 0x00, 3 * sizeof(int16_t));
+    memset(data_raw_angular_rate.u8bit, 0x00, 3 * sizeof(int16_t));
+
+    lsm9ds1_acceleration_raw_get(&dev_ctx_imu, data_raw_acceleration.u8bit);
+    lsm9ds1_angular_rate_raw_get(&dev_ctx_imu, data_raw_angular_rate.u8bit);
+
+    feature[0] =
+        lsm9ds1_from_fs4g_to_mg(data_raw_acceleration.i16bit[0]) * 0.00981;
+    feature[1] =
+        lsm9ds1_from_fs4g_to_mg(data_raw_acceleration.i16bit[1]) * 0.00981;
+    feature[2] =
+        lsm9ds1_from_fs4g_to_mg(data_raw_acceleration.i16bit[2]) * 0.00981;
+    feature[3] =
+        lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate.i16bit[0]) / 1000;
+    feature[4] =
+        lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate.i16bit[1]) / 1000;
+    feature[5] =
+        lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate.i16bit[2]) / 1000;
+
+    feature_fifo_push(feature);
+  }
 }
 
 EI_IMPULSE_ERROR run_classifier(signal_t *, ei_impulse_result_t *, bool);
@@ -186,29 +218,37 @@ int main(void) {
   ant_master_setup();
   NRF_LOG_INFO("ANT message types setup.\r\n");
 
+  app_timer_init();
+  APP_TIMER_DEF(timer_id);
+
+  APP_ERROR_CHECK(
+      app_timer_create(&timer_id, APP_TIMER_MODE_REPEATED, timeout_handler));
+
   /* Initialize inertial sensors (IMU) driver interface */
   uint8_t i2c_add_imu = LSM9DS1_IMU_I2C_ADD_H >> 1;
-  lsm9ds1_ctx_t dev_ctx_imu;
   dev_ctx_imu.write_reg = platform_write;
   dev_ctx_imu.read_reg = platform_read;
   dev_ctx_imu.handle = (void *)&i2c_add_imu;
   NRF_LOG_INFO("IMU sensors initialized");
 
+  /* Initialize Mag interface */
+  uint8_t i2c_add_mag = LSM9DS1_MAG_I2C_ADD_L >> 1;
+  dev_ctx_mag.write_reg = platform_write;
+  dev_ctx_mag.read_reg = platform_read;
+  dev_ctx_mag.handle = (void *)&i2c_add_mag;
+
   /* Check device ID */
-  lsm9ds1_dev_id_get(&dev_ctx_imu, &whoamI);
-  if (whoamI != LSM9DS1_IMU_ID) {
+  lsm9ds1_dev_id_get(&dev_ctx_mag, &dev_ctx_imu, &whoamI);
+  if (whoamI.imu != LSM9DS1_IMU_ID || whoamI.mag != LSM9DS1_MAG_ID) {
     while (1) {
       /* manage device not found */
       NRF_LOG_INFO("Cannot find the LSM9DS1.********");
     }
   }
-  NRF_LOG_INFO("Who am I register [IMU]: 0x%x", whoamI);
-
-  /* Enable FIFO */
-  lsm9ds1_fifo_mode_set(&dev_ctx_imu, LSM9DS1_STREAM_MODE);
+  NRF_LOG_INFO("Who am I register: 0x%x, 0x%x", whoamI.imu, whoamI.mag);
 
   /* Enable Block Data Update */
-  lsm9ds1_block_data_update_set(&dev_ctx_imu, PROPERTY_ENABLE);
+  lsm9ds1_block_data_update_set(&dev_ctx_mag, &dev_ctx_imu, PROPERTY_ENABLE);
   /* Set full scale */
   lsm9ds1_xl_full_scale_set(&dev_ctx_imu, LSM9DS1_4g);
   lsm9ds1_gy_full_scale_set(&dev_ctx_imu, LSM9DS1_2000dps);
@@ -217,7 +257,7 @@ int main(void) {
   lsm9ds1_xl_filter_aalias_bandwidth_set(&dev_ctx_imu, LSM9DS1_AUTO);
   lsm9ds1_xl_filter_lp_bandwidth_set(&dev_ctx_imu, LSM9DS1_LP_ODR_DIV_100);
   lsm9ds1_xl_filter_out_path_set(&dev_ctx_imu, LSM9DS1_LP_OUT);
-  /* Gyroscope filtering chain */
+  // // /* Gyroscope filtering chain */
   lsm9ds1_gy_filter_lp_bandwidth_set(&dev_ctx_imu, LSM9DS1_LP_ULTRA_LIGHT);
   lsm9ds1_gy_filter_hp_bandwidth_set(&dev_ctx_imu, LSM9DS1_HP_MEDIUM);
   lsm9ds1_gy_filter_out_path_set(&dev_ctx_imu, LSM9DS1_LPF1_HPF_LPF2_OUT);
@@ -225,64 +265,40 @@ int main(void) {
   lsm9ds1_imu_data_rate_set(&dev_ctx_imu, LSM9DS1_IMU_119Hz);
   NRF_LOG_INFO("IMU sensors configured");
 
-  uint8_t imu_fifo_count = 0;
+  APP_ERROR_CHECK(app_timer_start(
+      timer_id, APP_TIMER_TICKS(EI_CLASSIFIER_INTERVAL_MS), NULL));
 
   while (true) {
-    /* Read device status register */
-    lsm9ds1_dev_status_get(&dev_ctx_imu, &reg);
-
-    if (reg.status_imu.xlda && reg.status_imu.gda) {
-      memset(data_raw_acceleration.u8bit, 0x00, 3 * sizeof(int16_t));
-      memset(data_raw_angular_rate.u8bit, 0x00, 3 * sizeof(int16_t));
-
-      lsm9ds1_fifo_data_level_get(&dev_ctx_imu, &imu_fifo_count);
-      NRF_LOG_INFO("Retrieving samples from IMU FIFO");
-      for (uint8_t i = 0; i < imu_fifo_count; i++) {
-        lsm9ds1_acceleration_raw_get(&dev_ctx_imu, data_raw_acceleration.u8bit);
-        lsm9ds1_angular_rate_raw_get(&dev_ctx_imu, data_raw_angular_rate.u8bit);
-
-        feature[0] = lsm9ds1_from_fs4g_to_mg(data_raw_acceleration.i16bit[0]);
-        feature[1] = lsm9ds1_from_fs4g_to_mg(data_raw_acceleration.i16bit[1]);
-        feature[2] = lsm9ds1_from_fs4g_to_mg(data_raw_acceleration.i16bit[2]);
-        feature[3] =
-            lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate.i16bit[0]);
-        feature[4] =
-            lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate.i16bit[1]);
-        feature[5] =
-            lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate.i16bit[2]);
-        feature_fifo_push(feature);
+    if (feature_fifo_get_count() >= FIFO_BUFFER_CAPACITY) {
+      NRF_LOG_INFO("FIFO full. Classifying...");
+      signal_t signal;
+      signal.total_length = EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE;
+      signal.get_data = &get_feature_data;
+      ei_impulse_result_t result;
+      EI_IMPULSE_ERROR res = run_classifier(&signal, &result, true);
+      if (res != EI_IMPULSE_OK) {
+        NRF_LOG_INFO("ERR: Failed to run classifier (%d)", res);
+        continue;
       }
-      NRF_LOG_INFO("Retrieved %d samples from IMU FIFO", imu_fifo_count);
 
-      if (feature_fifo_get_count() >= FIFO_BUFFER_SIZE) {
-        NRF_LOG_INFO("FIFO full");
-        uint16_t size = feature_fifo_get_count();
-        float out[FIFO_BUFFER_SIZE];
-        feature_fifo_get(out, FIFO_BUFFER_SIZE);
-        NRF_LOG_INFO("FIFO emptied, %d", size);
-        signal_t signal;
-        signal.total_length = EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE;
-        signal.get_data = &get_feature_data;
-        ei_impulse_result_t result;
-        EI_IMPULSE_ERROR res = run_classifier(&signal, &result, true);
-        if (res != EI_IMPULSE_OK) {
-          NRF_LOG_INFO("ERR: Failed to run classifier (%d)", res);
-          continue;
-        }
+      if (result.classification[IDLE_LABEL_INDEX].value > 0.9) {
+        NRF_LOG_INFO("Classified as idle");
+        continue;
+      }
 
-        uint8_t max_index = 0;
-        for (uint8_t i = 1; i < EI_CLASSIFIER_LABEL_COUNT; i++) {
-          if (result.classification[i].value >
-              result.classification[max_index].value) {
-            max_index = i;
-          }
-        }
-        NRF_LOG_INFO("Classification: %d %d%%", max_index,
-                     (int)(result.classification[max_index].value * 100));
-        if (result.classification[max_index].value > 0.9) {
-          send_translation(max_index);
+      uint8_t max_index = 1;
+      for (uint8_t i = 2; i < EI_CLASSIFIER_LABEL_COUNT; i++) {
+        if (result.classification[i].value >
+            result.classification[max_index].value) {
+          max_index = i;
         }
       }
+      NRF_LOG_INFO("Classification: %d %d%%", max_index,
+                   (int)(result.classification[max_index].value * 100));
+      if (result.classification[max_index].value > 0.99) {
+        send_translation(max_index - 1);
+      }
+      nrf_delay_ms(200);
     }
   }
 }

@@ -30,31 +30,16 @@
 const char* ei_classifier_inferencing_categories[] = {"Idle", "Please",
                                                       "ThankYou", "Yes"};
 
-uint8_t ei_dsp_config_3_axes[] = {0, 1, 2, 3, 4, 5};
-const uint32_t ei_dsp_config_3_axes_size = 6;
-ei_dsp_config_spectral_analysis_t ei_dsp_config_3 = {
-    3,                          // uint32_t blockId
-    2,                          // int implementationVersion
-    6,                          // int length of axes
-    1.0f,                       // float scale-axes
-    1,                          // int input-decimation-ratio
-    "none",                     // select filter-type
-    3.0f,                       // float filter-cutoff
-    6,                          // int filter-order
-    "FFT",                      // select analysis-type
-    16,                         // int fft-length
-    3,                          // int spectral-peaks-count
-    0.1f,                       // float spectral-peaks-threshold
-    "0.1, 0.5, 1.0, 2.0, 5.0",  // string spectral-power-edges
-    true,                       // boolean do-log
-    true,                       // boolean do-fft-overlap
-    4,                          // int wavelet-level
-    "db4",                      // select wavelet
-    false                       // boolean extra-low-freq
+uint8_t ei_dsp_config_67_axes[] = {0, 1, 2, 3, 4, 5};
+const uint32_t ei_dsp_config_67_axes_size = 6;
+ei_dsp_config_raw_t ei_dsp_config_67 = {
+    67,   // uint32_t blockId
+    1,    // int implementationVersion
+    6,    // int length of axes
+    1.0f  // float scale-axes
 };
 
 #define EI_DSP_PARAMS_GENERATED 1
-#define EI_DSP_PARAMS_SPECTRAL_ANALYSIS_ANALYSIS_TYPE_FFT 1
 
 const ei_model_performance_calibration_t ei_calibration = {
     1,     /* integer version number */

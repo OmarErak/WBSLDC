@@ -74,6 +74,8 @@ void send_translation(uint8_t index);
 
 void start_transmission(void);
 
+void stop_transmission(void);
+
 #ifdef __cplusplus
 }
 #endif

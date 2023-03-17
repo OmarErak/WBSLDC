@@ -28,5 +28,5 @@ extern "C"
 #endif  // defined(__cplusplus) && EI_C_LINKAGE == 1
     void
     DebugLog(const char* s) {
-  // ei_printf("%s", s);
+  ei_printf("%s", s);
 }

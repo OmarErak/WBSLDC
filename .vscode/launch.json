@@ -14,7 +14,7 @@
       "armToolchainPath": "C:\\Program Files (x86)\\GNU Arm Embedded Toolchain\\9 2020-q2-update\\bin",
       "svdFile": "${workspaceFolder}/nrfSDK/modules/nrfx/mdk/nrf52.svd",
       "serverpath": "C:\\Program Files\\SEGGER\\JLink\\JLinkGDBServerCL.exe",
-      "preLaunchTask": "make"
+      //"preLaunchTask": "make"
     }
   ]
 }
